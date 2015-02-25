@@ -7,6 +7,13 @@ except:
         raise ImportError('restricted_pkg is required to upload, first do pip install restricted_pkg')
     from setuptools import setup
 
+try:
+    requirements = imp.load_source('requirements', os.path.realpath('static_requirements.py'))
+    print 'Using static requirements'
+except (IOError, ImportError):
+    requirements = imp.load_source('requirements', os.path.realpath('dynamic_requirements.py'))
+    print 'Using dynamic requirements'
+
 setup(
     name='deferrable',
     version='0.0.1',
@@ -16,7 +23,8 @@ setup(
     author='GameChanger',
     author_email='travis@gamechanger.io',
     packages=['deferrable'],
-    tests_requir=['nose>=1.3.0'],
+    install_requires=requirements.install_requires,
+    tests_require=requirements.test_requires,
     test_suite="nose.collector",
     zip_safe=False
 )
