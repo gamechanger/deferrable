@@ -30,7 +30,7 @@ class TestDebounce(TestCase):
     def test_set_last_push_time(self):
         set_last_push_time(self.redis_client, self.item, 1, 0.01)
         self.assertIsNotNone(self.redis_client.get(_last_push_key(self.item)))
-        time.sleep(0.02)
+        time.sleep(0.03)
         self.assertIsNone(self.redis_client.get(_last_push_key(self.item)))
 
     def test_debounce_strategy_first_time(self):
