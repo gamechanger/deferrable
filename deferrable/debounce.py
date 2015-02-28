@@ -16,7 +16,7 @@ def set_last_push_time(redis_client, item, time_to_set, delay_seconds):
     available inside a non-delay queue. Expires after 2*delay period to
     keep Redis clean. The 2* ensures that the key would have been stale at
     the period it is reaped."""
-    redis_client.set(_last_push_key(item), time_to_set, ex=2*delay_seconds)
+    redis_client.set(_last_push_key(item), time_to_set, px=int(2*delay_seconds*1000))
 
 def set_debounce_key(redis_client, item, expire_seconds):
     redis_client.set(_debounce_key(item), '_', px=int(expire_seconds*1000))
