@@ -6,9 +6,6 @@ from redis import StrictRedis
 from deferrable.debounce import (DebounceStrategy, _debounce_key, _last_push_key,
                                  set_last_push_time, set_debounce_key, get_debounce_strategy)
 
-def test_method():
-    pass
-
 class TestDebounce(TestCase):
     def setUp(self):
         self.redis_client = StrictRedis()

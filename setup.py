@@ -19,7 +19,7 @@ setup(
     author_email='travis@gamechanger.io',
     packages=['deferrable'],
     install_requires=[
-        'Dockets>=0.3.3,<0.4.0'
+        'Dockets>=0.3.4,<0.4.0'
     ],
     tests_require=[
         'nose>=1.3.0,<2.0.0',

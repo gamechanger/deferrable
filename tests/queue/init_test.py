@@ -23,7 +23,7 @@ class TestAllQueueImplementations(TestCase):
     def setUp(self):
         self.test_item_1 = {'id': str(uuid1())}
         self.test_item_2 = {'id': str(uuid1())}
-        self.test_item_delay = {'id': str(uuid1()), 'delay': 0.1}
+        self.test_item_delay = {'id': str(uuid1()), 'delay': 1}
 
     def tearDown(self):
         for queue in self.all_queues():
@@ -81,7 +81,7 @@ class TestAllQueueImplementations(TestCase):
             self.assertIsNone(envelope)
             self.assertIsNone(item)
             self.assertEqual(0, len(queue))
-            time.sleep(0.11)
+            time.sleep(1.01)
 
             envelope, item = queue.pop()
             self.assertIsNotNone(envelope)

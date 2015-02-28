@@ -7,8 +7,8 @@ import socket
 from traceback import format_exc
 
 from .pickling import build_later_item, unpickle_method_call, pretty_unpickle
-from .debounce import get_debounce_strategy, set_last_push_time, set_debounce_key
-from .ttl import add_ttl_metadata_to_item
+from .debounce import get_debounce_strategy, set_last_push_time, set_debounce_key, DebounceStrategy
+from .ttl import add_ttl_metadata_to_item, item_is_expired
 
 class Deferrable(object):
     def __init__(self, backend, redis_client=None):
@@ -23,7 +23,9 @@ class Deferrable(object):
 
     def run_once(self):
         envelope, item = self.backend.queue.pop()
-        item_error_classes = pickle.loads(item['error_classes'])
+        if not envelope:
+            return
+        item_error_classes = pickle.loads(item['error_classes']) or tuple()
 
         try:
             if item_is_expired(item):
@@ -81,7 +83,7 @@ class Deferrable(object):
             if delay_seconds > ttl_seconds or debounce_seconds > ttl_seconds:
                 raise ValueError('delay_seconds or debounce_seconds must be less than ttl_seconds')
 
-    def _deferrable(self, method, group=None, error_classes=None, max_attempts=None,
+    def _deferrable(self, method, error_classes=None, max_attempts=None,
                     delay_seconds=None, debounce_seconds=False, debounce_always_delay=False, ttl_seconds=None):
         self._validate_deferrable_args(max_attempts, delay_seconds, debounce_seconds, debounce_always_delay, ttl_seconds)
 
@@ -97,7 +99,7 @@ class Deferrable(object):
 
             seconds_to_delay = delay_seconds or debounce_seconds
             if debounce_seconds:
-                debounce_strategy, seconds_to_delay = _get_debounce_strategy(item, debounce_seconds, debounce_always_delay)
+                debounce_strategy, seconds_to_delay = get_debounce_strategy(self.redis_client, item, debounce_seconds, debounce_always_delay)
                 if debounce_strategy == DebounceStrategy.SKIP:
                     # debounce hits
                     return
