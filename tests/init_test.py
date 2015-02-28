@@ -9,7 +9,9 @@ from deferrable import Deferrable
 from deferrable.backend.dockets import DocketsBackendFactory
 
 # We need these at module scope so we can create a test method with
-# the decorator.
+# the decorator. These tests should work with any backend that
+# passes the standard queue tests. Ideally, we'd want to run these
+# with each backend. TODO.
 redis_client = StrictRedis()
 factory = DocketsBackendFactory(redis_client, wait_time=-1)
 backend = factory.create_backend_for_group('testing')
