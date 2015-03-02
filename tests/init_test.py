@@ -48,10 +48,19 @@ event_consumer = EventConsumer()
 instance.register_event_consumer(event_consumer)
 
 my_mock = Mock()
+RETRIABLE_ALLOW_FAIL = True
 
 @instance.deferrable
 def simple_deferrable(*args, **kwargs):
     my_mock(*args, **kwargs)
+
+@instance.deferrable(error_classes=[ValueError], max_attempts=3)
+def retriable_deferrable(should_raise):
+    global RETRIABLE_ALLOW_FAIL
+    if should_raise and RETRIABLE_ALLOW_FAIL:
+        my_mock(should_raise)
+        raise ValueError()
+    my_mock(should_raise)
 
 @instance.deferrable(delay_seconds=1)
 def delayed_deferrable(foo, bar, *args, **kwargs):
@@ -71,6 +80,8 @@ def ttl_deferrable(*args, **kwargs):
 
 class TestDeferrable(TestCase):
     def setUp(self):
+        global RETRIABLE_ALLOW_FAIL
+        RETRIABLE_ALLOW_FAIL = True
         self.item = {'id': str(uuid1())}
 
     def tearDown(self):
@@ -129,6 +140,47 @@ class TestDeferrable(TestCase):
         simple_deferrable('bacon')
         event_consumer.assert_event_not_emitted('push')
         my_mock.assert_called_once_with('bacon')
+
+    def test_retriable_with_no_error(self):
+        retriable_deferrable.later(False)
+        event_consumer.assert_event_emitted('push')
+        instance.run_once()
+        event_consumer.assert_event_emitted('pop')
+        event_consumer.assert_event_emitted('complete')
+        my_mock.assert_called_once_with(False)
+
+    def test_retriable_recover(self):
+        global RETRIABLE_ALLOW_FAIL
+
+        retriable_deferrable.later(True)
+        event_consumer.assert_event_emitted('push')
+        instance.run_once()
+        event_consumer.assert_event_emitted('pop')
+        event_consumer.assert_event_emitted('retry')
+        self.assertTrue(my_mock.called_once_with(True))
+
+        RETRIABLE_ALLOW_FAIL = False
+        event_consumer.reset_mocks()
+        instance.run_once()
+        event_consumer.assert_event_emitted('pop')
+        event_consumer.assert_event_not_emitted('retry')
+        event_consumer.assert_event_not_emitted('error')
+        event_consumer.assert_event_emitted('complete')
+        self.assertTrue(my_mock.has_calls((True,), (False,)))
+
+    def test_retriable_goes_to_error_queue(self):
+        retriable_deferrable.later(True)
+        instance.run_once()
+        instance.run_once()
+
+        event_consumer.reset_mocks()
+        instance.run_once()
+        event_consumer.assert_event_emitted('pop')
+        event_consumer.assert_event_emitted('error')
+        event_consumer.assert_event_emitted('complete')
+
+        self.assertEqual(0, len(instance.backend.queue))
+        self.assertEqual(1, len(instance.backend.error_queue))
 
     def test_delay(self):
         delayed_deferrable.later('beans', 'cornbread')
