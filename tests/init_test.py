@@ -159,3 +159,10 @@ class TestDeferrable(TestCase):
         instance.run_once()
         my_mock.assert_called_once_with(1, b=2)
         metadata_mock.assert_called_once_with(metadata_id)
+
+    def test_registering_duplicate_metadata_namespace_raises(self):
+        class ExampleMetadataProducerConsumer(MetadataProducerConsumer):
+            NAMESPACE = 'testing'
+        instance.register_metadata_producer_consumer(ExampleMetadataProducerConsumer())
+        with self.assertRaises(ValueError):
+            instance.register_metadata_producer_consumer(ExampleMetadataProducerConsumer())
