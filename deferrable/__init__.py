@@ -17,15 +17,15 @@ class Deferrable(object):
     regarding queue operations (e.g. pop) are called *after* the operation
     has taken place.
 
-    - on_push (item pushed to the non-error queue)
-    - on_pop (pop was attempted and returned an item)
-    - on_empty (pop was attempted but did not return an item)
-    - on_complete (item completed in the non-error queue)
-    - on_expire (TTL expiration)
-    - on_retry (item execution errored but will be retried)
-    - on_error (item execution errored and was pushed to the error queue)
-    - on_debounce_hit (item was not queued subject to debounce constraints)
-    - on_debounce_miss (item is configured for debounce but was queued)
+    - on_push          : item pushed to the non-error queue
+    - on_pop           : pop was attempted and returned an item
+    - on_empty         : pop was attempted but did not return an item
+    - on_complete      : item completed in the non-error queue
+    - on_expire        : TTL expiration
+    - on_retry         : item execution errored but will be retried
+    - on_error         : item execution errored and was pushed to the error queue
+    - on_debounce_hit  : item was not queued subject to debounce constraints
+    - on_debounce_miss : item is configured for debounce but was queued
     """
 
     def __init__(self, backend, redis_client=None):
