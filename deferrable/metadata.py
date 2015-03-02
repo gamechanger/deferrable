@@ -1,4 +1,4 @@
-from .pickling import load, dump
+from .pickling import loads, dumps
 
 class MetadataProducerConsumer(object):
     """Defines a class which applies metadata to
@@ -24,8 +24,8 @@ class MetadataProducerConsumer(object):
         pass
 
     def _apply_metadata_to_item(self, item):
-        item.setdefault('metadata', {})[self.NAMESPACE] = dump(self.produce_metadata())
+        item.setdefault('metadata', {})[self.NAMESPACE] = dumps(self.produce_metadata())
 
     def _consume_metadata_from_item(self, item):
         metadata = item.get('metadata', {}).get(self.NAMESPACE)
-        self.consume_metadata(load(metadata))
+        self.consume_metadata(loads(metadata))
