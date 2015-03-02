@@ -18,8 +18,8 @@ class TestDocketsBackendFactory(TestCase):
             self.assertIsInstance(backend.error_queue, DocketsErrorQueue)
 
     def test_queue_name(self):
-        self.assertEqual(self.factory._queue_name('later', None), 'later')
-        self.assertEqual(self.factory._queue_name('later', 'testing'), 'later:testing')
+        self.assertEqual(self.factory._queue_name('deferrable', None), 'deferrable')
+        self.assertEqual(self.factory._queue_name('deferrable', 'testing'), 'deferrable:testing')
 
 class TestDocketsBackend(TestCase):
     pass
