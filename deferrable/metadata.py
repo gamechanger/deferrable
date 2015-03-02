@@ -27,5 +27,5 @@ class MetadataProducerConsumer(object):
         item.setdefault('metadata', {})[self.NAMESPACE] = dump(self.produce_metadata())
 
     def _consume_metadata_from_item(self, item):
-        metadata = item['metadata'].get(self.NAMESPACE)
+        metadata = item.get('metadata', {}).get(self.NAMESPACE)
         self.consume_metadata(load(metadata))
