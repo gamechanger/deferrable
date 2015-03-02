@@ -20,17 +20,10 @@ instance = Deferrable(backend, redis_client=redis_client)
 
 class EventConsumer(object):
     def __init__(self):
-        self.mocks = {
-            'push': Mock(),
-            'pop': Mock(),
-            'empty': Mock(),
-            'complete': Mock(),
-            'expire': Mock(),
-            'retry': Mock(),
-            'error': Mock(),
-            'debounce_hit': Mock(),
-            'debounce_miss': Mock()
-        }
+        self.mocks = {}
+        for event in ['push', 'pop', 'empty', 'complete', 'expire',
+                      'retry', 'error', 'debounce_hit', 'debounce_miss']:
+            self.mocks[event] = Mock()
 
     def reset_mocks(self):
         for mock in self.mocks.itervalues():
