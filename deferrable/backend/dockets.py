@@ -17,7 +17,7 @@ class DocketsBackendFactory(BackendFactory):
                              self.wait_time,
                              self.timeout)
         error_queue = queue.make_error_queue()
-        return DocketsBackend(queue, error_queue)
+        return DocketsBackend(group, queue, error_queue)
 
     @staticmethod
     def _queue_name(base, group):

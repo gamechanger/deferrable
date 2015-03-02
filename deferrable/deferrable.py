@@ -142,6 +142,7 @@ class Deferrable(object):
         def later(*args, **kwargs):
             item = build_later_item(method, *args, **kwargs)
             item.update({
+                'group': dumps(self.backend.group),
                 'error_classes': dumps(error_classes),
                 'attempts': 0,
                 'max_attempts': max_attempts
