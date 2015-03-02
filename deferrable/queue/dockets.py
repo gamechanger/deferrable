@@ -6,7 +6,7 @@ from uuid import uuid1
 import dockets.queue
 import dockets.error_queue
 
-from . import Queue
+from .base import Queue
 
 PUSH_KWARGS_KEYS = ['delay']
 
