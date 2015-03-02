@@ -5,7 +5,7 @@ from uuid import uuid1
 import socket
 from traceback import format_exc
 
-from .pickling import load, dump, build_later_item, unpickle_method_call, pretty_unpickle
+from .pickling import loads, dumps, build_later_item, unpickle_method_call, pretty_unpickle
 from .debounce import get_debounce_strategy, set_last_push_time, set_debounce_key, DebounceStrategy
 from .ttl import add_ttl_metadata_to_item, item_is_expired
 
@@ -26,7 +26,7 @@ class Deferrable(object):
         envelope, item = self.backend.queue.pop()
         if not envelope:
             return
-        item_error_classes = load(item['error_classes']) or tuple()
+        item_error_classes = loads(item['error_classes']) or tuple()
 
         for producer_consumer in self._metadata_producer_consumers:
             producer_consumer._consume_metadata_from_item(item)
@@ -103,7 +103,7 @@ class Deferrable(object):
         def later(*args, **kwargs):
             item = build_later_item(method, *args, **kwargs)
             item.update({
-                'error_classes': dump(error_classes),
+                'error_classes': dumps(error_classes),
                 'attempts': 0,
                 'max_attempts': max_attempts
             })

@@ -3,11 +3,11 @@ from uuid import uuid1
 from mock import Mock
 
 from deferrable.metadata import MetadataProducerConsumer
-from deferrable.pickling import load, dump
+from deferrable.pickling import dumps
 
 class TestMetadataProducerConsumer(TestCase):
     def setUp(self):
-        self.item = {'id': uuid1(), 'metadata': {'premade': dump(10)}}
+        self.item = {'id': uuid1(), 'metadata': {'premade': dumps(10)}}
         self.cls = MetadataProducerConsumer
         self.cls.NAMESPACE = 'namespace'
         self.my_mock = Mock()
@@ -24,7 +24,7 @@ class TestMetadataProducerConsumer(TestCase):
     def test_apply_metadata_to_item(self):
         self.cls.produce_metadata = lambda self: 1
         self.cls()._apply_metadata_to_item(self.item)
-        self.assertEqual(self.item['metadata']['namespace'], dump(1))
+        self.assertEqual(self.item['metadata']['namespace'], dumps(1))
 
     def test_consume_metadata_from_item(self):
         self.cls.NAMESPACE = 'premade'
