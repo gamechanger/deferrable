@@ -1,6 +1,7 @@
 import os
 import sys
 import imp
+from setuptools import find_packages
 
 try:
     from restricted_pkg import setup
@@ -26,7 +27,7 @@ setup(
     private_repository='gamechanger',
     author='GameChanger',
     author_email='travis@gamechanger.io',
-    packages=['deferrable'],
+    packages=find_packages('deferrable'),
     install_requires=requirements.install_requires,
     tests_require=requirements.test_requires,
     test_suite="nose.collector",
