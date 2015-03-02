@@ -10,11 +10,30 @@ from .debounce import get_debounce_strategy, set_last_push_time, set_debounce_ke
 from .ttl import add_ttl_metadata_to_item, item_is_expired
 
 class Deferrable(object):
+    """
+    The following events are emitted by Deferrable and may be consumed by
+    registering event handlers with the appropriate `on_{event}` methods,
+    each of which takes the queue item as its sole argument. Event handlers
+    regarding queue operations (e.g. pop) are called *after* the operation
+    has taken place.
+
+    - on_push (item pushed to the non-error queue)
+    - on_pop (pop was attempted and returned an item)
+    - on_empty (pop was attempted but did not return an item)
+    - on_complete (item completed in the non-error queue)
+    - on_expire (TTL expiration)
+    - on_retry (item execution errored but will be retried)
+    - on_error (item execution errored and was pushed to the error queue)
+    - on_debounce_hit (item was not queued subject to debounce constraints)
+    - on_debounce_miss (item is configured for debounce but was queued)
+    """
+
     def __init__(self, backend, redis_client=None):
         self.backend = backend
         self.redis_client = redis_client
 
         self._metadata_producer_consumers = []
+        self._event_consumers = []
 
     def deferrable(self, *args, **kwargs):
         if len(args) == 1 and callable(args[0]) and not kwargs:
@@ -25,7 +44,9 @@ class Deferrable(object):
     def run_once(self):
         envelope, item = self.backend.queue.pop()
         if not envelope:
+            self._emit('empty', item)
             return
+        self._emit('pop', item)
         item_error_classes = loads(item['error_classes']) or tuple()
 
         for producer_consumer in self._metadata_producer_consumers:
@@ -34,6 +55,9 @@ class Deferrable(object):
         try:
             if item_is_expired(item):
                 logging.warn("Deferrable job dropped with expired TTL: {}".format(pretty_unpickle(item)))
+                self._emit('expire', item)
+                self.backend.queue.complete(envelope)
+                self._emit('complete', item)
                 return
             method, args, kwargs = unpickle_method_call(item)
             method(*args, **kwargs)
@@ -44,10 +68,12 @@ class Deferrable(object):
             else:
                 item['attempts'] += 1
                 self.backend.queue.push(item)
+                self._emit('retry', item)
         except Exception:
             self._push_item_to_error_queue(item)
 
         self.backend.queue.complete(envelope)
+        self._emit('complete', item)
 
     def register_metadata_producer_consumer(self, producer_consumer):
         for existing in self._metadata_producer_consumers:
@@ -57,6 +83,18 @@ class Deferrable(object):
 
     def clear_metadata_producer_consumers(self):
         self._metadata_producer_consumers = []
+
+    def register_event_consumer(self, event_consumer):
+        self._event_consumers.append(event_consumer)
+
+    def clear_event_consumers(self):
+        self._event_consumers = []
+
+    def _emit(self, event, item):
+        handler_name = 'on_{}'.format(event)
+        for event_consumer in self._event_consumers:
+            if hasattr(event_consumer, handler_name):
+                getattr(event_consumer, handler_name)(item)
 
     def _push_item_to_error_queue(self, item):
         """Put information about the current exception into the item's `error`
@@ -73,6 +111,7 @@ class Deferrable(object):
         }
         item['error'] = error_info
         self.backend.error_queue.push(item)
+        self._emit('error', item)
 
     def _validate_deferrable_args(self, max_attempts, delay_seconds, debounce_seconds, debounce_always_delay, ttl_seconds):
         if max_attempts and (not isinstance(max_attempts, int)):
@@ -114,10 +153,10 @@ class Deferrable(object):
             if debounce_seconds:
                 debounce_strategy, seconds_to_delay = get_debounce_strategy(self.redis_client, item, debounce_seconds, debounce_always_delay)
                 if debounce_strategy == DebounceStrategy.SKIP:
-                    # debounce hits
+                    self._emit('debounce_hit', item)
                     return
 
-                # debounce misses
+                self._emit('debounce_miss', item)
 
                 if debounce_strategy == DebounceStrategy.PUSH_NOW:
                     set_last_push_time(self.redis_client, item, time.time(), debounce_seconds)
@@ -131,6 +170,7 @@ class Deferrable(object):
                 producer_consumer._apply_metadata_to_item(item)
 
             self.backend.queue.push(item)
+            self._emit('push', item)
 
         method.later = later
         return method
