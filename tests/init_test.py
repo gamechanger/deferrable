@@ -6,6 +6,7 @@ from mock import Mock
 from redis import StrictRedis
 
 from deferrable import Deferrable
+from deferrable.metadata import MetadataProducerConsumer
 from deferrable.backend.dockets import DocketsBackendFactory
 
 # We need these at module scope so we can create a test method with
@@ -44,6 +45,7 @@ class TestDeferrable(TestCase):
         self.item = {'id': str(uuid1())}
 
     def tearDown(self):
+        instance.clear_metadata_producer_consumers()
         backend.queue.flush()
         backend.error_queue.flush()
         my_mock.reset_mock()
@@ -141,3 +143,26 @@ class TestDeferrable(TestCase):
         time.sleep(1.5)
         instance.run_once()
         self.assertFalse(my_mock.called)
+
+    def test_simple_function_with_metadata(self):
+        metadata_id = uuid1()
+        metadata_mock = Mock()
+        class ExampleMetadataProducerConsumer(MetadataProducerConsumer):
+            NAMESPACE = 'testing'
+            def produce_metadata(self):
+                return metadata_id
+            def consume_metadata(self, metadata):
+                metadata_mock(metadata)
+
+        instance.register_metadata_producer_consumer(ExampleMetadataProducerConsumer())
+        simple_deferrable.later(1, b=2)
+        instance.run_once()
+        my_mock.assert_called_once_with(1, b=2)
+        metadata_mock.assert_called_once_with(metadata_id)
+
+    def test_registering_duplicate_metadata_namespace_raises(self):
+        class ExampleMetadataProducerConsumer(MetadataProducerConsumer):
+            NAMESPACE = 'testing'
+        instance.register_metadata_producer_consumer(ExampleMetadataProducerConsumer())
+        with self.assertRaises(ValueError):
+            instance.register_metadata_producer_consumer(ExampleMetadataProducerConsumer())

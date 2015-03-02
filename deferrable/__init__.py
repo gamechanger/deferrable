@@ -1,12 +1,11 @@
 import sys
 import time
-import cPickle as pickle
 import logging
 from uuid import uuid1
 import socket
 from traceback import format_exc
 
-from .pickling import build_later_item, unpickle_method_call, pretty_unpickle
+from .pickling import load, dump, build_later_item, unpickle_method_call, pretty_unpickle
 from .debounce import get_debounce_strategy, set_last_push_time, set_debounce_key, DebounceStrategy
 from .ttl import add_ttl_metadata_to_item, item_is_expired
 
@@ -14,6 +13,8 @@ class Deferrable(object):
     def __init__(self, backend, redis_client=None):
         self.backend = backend
         self.redis_client = redis_client
+
+        self._metadata_producer_consumers = []
 
     def deferrable(self, *args, **kwargs):
         if len(args) == 1 and callable(args[0]) and not kwargs:
@@ -25,7 +26,10 @@ class Deferrable(object):
         envelope, item = self.backend.queue.pop()
         if not envelope:
             return
-        item_error_classes = pickle.loads(item['error_classes']) or tuple()
+        item_error_classes = load(item['error_classes']) or tuple()
+
+        for producer_consumer in self._metadata_producer_consumers:
+            producer_consumer._consume_metadata_from_item(item)
 
         try:
             if item_is_expired(item):
@@ -44,6 +48,15 @@ class Deferrable(object):
             self._push_item_to_error_queue(item)
 
         self.backend.queue.complete(envelope)
+
+    def register_metadata_producer_consumer(self, producer_consumer):
+        for existing in self._metadata_producer_consumers:
+            if existing.NAMESPACE == producer_consumer.NAMESPACE:
+                raise ValueError('NAMESPACE {} is already in use'.format(producer_consumer.NAMESPACE))
+        self._metadata_producer_consumers.append(producer_consumer)
+
+    def clear_metadata_producer_consumers(self):
+        self._metadata_producer_consumers = []
 
     def _push_item_to_error_queue(self, item):
         """Put information about the current exception into the item's `error`
@@ -90,7 +103,7 @@ class Deferrable(object):
         def later(*args, **kwargs):
             item = build_later_item(method, *args, **kwargs)
             item.update({
-                'error_classes': pickle.dumps(error_classes),
+                'error_classes': dump(error_classes),
                 'attempts': 0,
                 'max_attempts': max_attempts
             })
@@ -114,7 +127,8 @@ class Deferrable(object):
 
             item['delay'] = seconds_to_delay or None
 
-            # need to add item transformers for correlation ID and stuff
+            for producer_consumer in self._metadata_producer_consumers:
+                producer_consumer._apply_metadata_to_item(item)
 
             self.backend.queue.push(item)
 
