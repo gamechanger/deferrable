@@ -1,6 +1,6 @@
 import sys
 import time
-import pickle
+import cPickle as pickle
 import logging
 from uuid import uuid1
 import socket

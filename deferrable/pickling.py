@@ -1,4 +1,4 @@
-import pickle
+import cPickle as pickle
 
 def pretty_unpickle(item):
     method, args, kwargs = unpickle_method_call(item)
