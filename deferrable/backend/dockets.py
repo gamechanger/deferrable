@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import dockets.queue
 
-from . import BackendFactory, Backend
+from .base import BackendFactory, Backend
 from ..queue.dockets import DocketsQueue
 
 class DocketsBackendFactory(BackendFactory):
