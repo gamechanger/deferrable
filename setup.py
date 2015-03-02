@@ -27,7 +27,7 @@ setup(
     private_repository='gamechanger',
     author='GameChanger',
     author_email='travis@gamechanger.io',
-    packages=find_packages('deferrable'),
+    packages=find_packages(),
     install_requires=requirements.install_requires,
     tests_require=requirements.test_requires,
     test_suite="nose.collector",
