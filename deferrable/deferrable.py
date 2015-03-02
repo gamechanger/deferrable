@@ -67,6 +67,7 @@ class Deferrable(object):
                 self._push_item_to_error_queue(item)
             else:
                 item['attempts'] += 1
+                item['last_push_time'] = time.time()
                 self.backend.queue.push(item)
                 self._emit('retry', item)
         except Exception:
@@ -110,6 +111,7 @@ class Deferrable(object):
             'id': str(uuid1())
         }
         item['error'] = error_info
+        item['last_push_time'] = time.time()
         self.backend.error_queue.push(item)
         self._emit('error', item)
 
@@ -141,11 +143,14 @@ class Deferrable(object):
 
         def later(*args, **kwargs):
             item = build_later_item(method, *args, **kwargs)
+            now = time.time()
             item.update({
                 'group': dumps(self.backend.group),
                 'error_classes': dumps(error_classes),
                 'attempts': 0,
-                'max_attempts': max_attempts
+                'max_attempts': max_attempts,
+                'first_push_time': now,
+                'last_push_time': now
             })
             if ttl_seconds:
                 add_ttl_metadata_to_item(item, ttl_seconds)
