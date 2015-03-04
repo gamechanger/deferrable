@@ -9,13 +9,15 @@ from redis import StrictRedis
 from uuid import uuid1
 
 from deferrable.backend.dockets import DocketsBackendFactory
+from deferrable.backend.memory import InMemoryBackendFactory
 
 class TestAllQueueImplementations(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.redis_client = StrictRedis(db=15)
         cls.factories = [
-            DocketsBackendFactory(StrictRedis(), wait_time=-1)
+            DocketsBackendFactory(StrictRedis(), wait_time=-1),
+            InMemoryBackendFactory()
         ]
         cls.backends = [factory.create_backend_for_group('test')
                         for factory in cls.factories]
