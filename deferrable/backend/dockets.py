@@ -13,17 +13,11 @@ class DocketsBackendFactory(BackendFactory):
 
     def create_backend_for_group(self, group):
         queue = DocketsQueue(self.redis_client,
-                             self._queue_name('deferrable', group),
+                             self._queue_name(group),
                              self.wait_time,
                              self.timeout)
         error_queue = queue.make_error_queue()
         return DocketsBackend(group, queue, error_queue)
-
-    @staticmethod
-    def _queue_name(base, group):
-        if group:
-            return '{}:{}'.format(base, group)
-        return base
 
 class DocketsBackend(Backend):
     pass

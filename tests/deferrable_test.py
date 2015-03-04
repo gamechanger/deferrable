@@ -8,13 +8,16 @@ from redis import StrictRedis
 from deferrable import Deferrable
 from deferrable.metadata import MetadataProducerConsumer
 from deferrable.backend.dockets import DocketsBackendFactory
+from deferrable.backend.memory import InMemoryBackendFactory
 
 # We need these at module scope so we can create a test method with
 # the decorator. These tests should work with any backend that
-# passes the standard queue tests. Ideally, we'd want to run these
-# with each backend. TODO.
+# passes the standard queue tests. Ideally, we'd want to automatically
+# run these with each backend (TODO). Factories specified and
+# commented out to allow quick manual testing of each.
 redis_client = StrictRedis()
 factory = DocketsBackendFactory(redis_client, wait_time=-1)
+# factory = InMemoryBackendFactory()
 backend = factory.create_backend_for_group('testing')
 instance = Deferrable(backend, redis_client=redis_client)
 
