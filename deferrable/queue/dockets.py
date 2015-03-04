@@ -43,7 +43,7 @@ class DocketsQueue(Queue):
     def _flush(self):
         while True:
             envelope, item = self._pop()
-            if not envelope:
+            if envelope is None:
                 break
             self._complete(envelope)
 
@@ -58,6 +58,9 @@ class DocketsErrorQueue(Queue):
         return self.queue.length()
 
     def _push(self, item):
+        """This error ID dance is Dockets-specific, since we need the ID
+        to interface with the hash error queue. Other backends shouldn't
+        need to do this and should use the envelope properly instead."""
         try:
             error_id = item['error']['id']
         except KeyError:

@@ -68,6 +68,8 @@ class Deferrable(object):
             else:
                 item['attempts'] += 1
                 item['last_push_time'] = time.time()
+                if 'delay' in item:
+                    del item['delay']
                 self.backend.queue.push(item)
                 self._emit('retry', item)
         except Exception:
@@ -112,6 +114,8 @@ class Deferrable(object):
         }
         item['error'] = error_info
         item['last_push_time'] = time.time()
+        if 'delay' in item:
+            del item['delay']
         self.backend.error_queue.push(item)
         self._emit('error', item)
 
