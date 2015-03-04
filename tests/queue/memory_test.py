@@ -2,7 +2,7 @@ from unittest import TestCase
 import time
 
 from deferrable.backend.memory import InMemoryBackendFactory
-from deferrable.queue.memory import InMemoryQueue, InMemoryErrorQueue
+from deferrable.queue.memory import InMemoryQueue
 
 class TestInMemoryQueue(TestCase):
     def setUp(self):
@@ -27,6 +27,3 @@ class TestInMemoryQueue(TestCase):
         self.queue._move_from_delay_queue()
         self.assertEqual(0, self.delay_queue.qsize())
         self.assertEqual(1, self.main_queue.qsize())
-
-class TestInMemoryErrorQueue(TestCase):
-    pass

@@ -58,6 +58,3 @@ class InMemoryQueue(Queue):
     def _flush(self):
         self.queue = PythonQueue()
         self.delay_queue = PriorityQueue()
-
-class InMemoryErrorQueue(InMemoryQueue):
-    pass
