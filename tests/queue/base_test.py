@@ -19,15 +19,19 @@ class TestAllQueueImplementations(TestCase):
             DocketsBackendFactory(StrictRedis(), wait_time=-1),
             InMemoryBackendFactory()
         ]
-        cls.backends = [factory.create_backend_for_group('test')
+        cls.backends = [factory.create_backend_for_group('testing')
                         for factory in cls.factories]
 
     def setUp(self):
+        self._flush_all_queues()
         self.test_item_1 = {'id': str(uuid1())}
         self.test_item_2 = {'id': str(uuid1())}
         self.test_item_delay = {'id': str(uuid1()), 'delay': 1}
 
     def tearDown(self):
+        self._flush_all_queues()
+
+    def _flush_all_queues(self):
         for queue in self.all_queues():
             queue.flush()
 

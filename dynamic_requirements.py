@@ -1,5 +1,6 @@
 install_requires = [
     'Dockets>=0.3.4,<0.4.0',
+    'boto>=2.36.0',
 ]
 
 test_requires = [
