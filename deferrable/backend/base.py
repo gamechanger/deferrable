@@ -6,7 +6,7 @@ class BackendFactory(object):
     def _queue_name(group):
         base = 'deferrable'
         if group:
-            return '{}:{}'.format(base, group)
+            return '{}_{}'.format(base, group)
         return base
 
 class Backend(object):

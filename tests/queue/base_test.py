@@ -7,36 +7,46 @@ import time
 from unittest import TestCase
 from redis import StrictRedis
 from uuid import uuid1
+from moto import mock_sqs
+from boto.sqs.connection import SQSConnection
 
 from deferrable.backend.dockets import DocketsBackendFactory
 from deferrable.backend.memory import InMemoryBackendFactory
+from deferrable.backend.sqs import SQSBackendFactory
 
 class TestAllQueueImplementations(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.redis_client = StrictRedis(db=15)
-        cls.factories = [
-            DocketsBackendFactory(StrictRedis(), wait_time=-1),
-            InMemoryBackendFactory()
-        ]
-        cls.backends = [factory.create_backend_for_group('test')
-                        for factory in cls.factories]
-
     def setUp(self):
+        self._flush_all_queues()
         self.test_item_1 = {'id': str(uuid1())}
         self.test_item_2 = {'id': str(uuid1())}
         self.test_item_delay = {'id': str(uuid1()), 'delay': 1}
 
     def tearDown(self):
+        self._flush_all_queues()
+
+    def _flush_all_queues(self):
         for queue in self.all_queues():
-            queue.flush()
+            if hasattr(queue, '_slow_flush'):
+                queue._slow_flush()
+            else:
+                queue.flush()
 
     def all_queues(self):
-        for backend in self.backends:
-            logging.info('Testing {}'.format(repr(backend.queue)))
-            yield backend.queue
-            logging.info('Testing {}'.format(repr(backend.error_queue)))
-            yield backend.error_queue
+        redis_client = StrictRedis(db=15)
+        factory = DocketsBackendFactory(redis_client, wait_time=-1)
+        backend = factory.create_backend_for_group('testing')
+        yield backend.queue
+        yield backend.error_queue
+
+        backend = InMemoryBackendFactory().create_backend_for_group('testing')
+        yield backend.queue
+
+        fake_sqs = mock_sqs()
+        fake_sqs.start()
+        factory = SQSBackendFactory(SQSConnection(), wait_time=None, create_if_missing=True)
+        backend = factory.create_backend_for_group('testing')
+        yield backend.queue
+        fake_sqs.stop()
 
     def test_len_with_no_items(self):
         for queue in self.all_queues():

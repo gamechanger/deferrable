@@ -7,7 +7,11 @@ services:
   - redis
 script:
   - cd $REPO
-  - python setup.py test
+  - pip install -q .
+  - |
+    python -c "import dynamic_requirements; f = open('requirements.txt', 'w'); map(lambda x: f.write(x + '\n'), dynamic_requirements.test_requires)"
+  - pip install -q -r requirements.txt
+  - nosetests
   - tests_complete deferrable
 notify:
   webhook:

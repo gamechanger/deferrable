@@ -7,7 +7,7 @@ class TestBackendFactory(TestCase):
         self.assertEqual('deferrable', BackendFactory._queue_name(None))
 
     def test_queue_name_with_group(self):
-        self.assertEqual('deferrable:test', BackendFactory._queue_name('test'))
+        self.assertEqual('deferrable_test', BackendFactory._queue_name('test'))
 
 class TestBackend(TestCase):
     pass
