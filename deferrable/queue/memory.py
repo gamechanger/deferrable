@@ -35,9 +35,6 @@ class InMemoryQueue(Queue):
         # because it wasn't time for it to go yet
         self.delay_queue.put((score, item))
 
-    def __len__(self):
-        return self.queue.qsize()
-
     def _push(self, item):
         if item.get('delay'):
             self._push_to_delay_queue(item, item['delay'])
@@ -58,3 +55,8 @@ class InMemoryQueue(Queue):
     def _flush(self):
         self.queue = PythonQueue()
         self.delay_queue = PriorityQueue()
+
+    def _stats(self):
+        return {'items_available': self.queue.qsize(),
+                'items_in_flight': 0,
+                'items_delayed': self.delay_queue.qsize()}
