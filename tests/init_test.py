@@ -14,6 +14,7 @@ from deferrable.backend.dockets import DocketsBackendFactory
 # passes the standard queue tests. Ideally, we'd want to run these
 # with each backend. TODO.
 redis_client = StrictRedis()
+broken_redis_client = StrictRedis(host='google.com', socket_timeout=0.1)
 factory = DocketsBackendFactory(redis_client, wait_time=0)
 backend = factory.create_backend_for_group('testing')
 instance = Deferrable(backend, redis_client=redis_client)
@@ -22,7 +23,8 @@ class EventConsumer(object):
     def __init__(self):
         self.mocks = {}
         for event in ['push', 'pop', 'empty', 'complete', 'expire',
-                      'retry', 'error', 'debounce_hit', 'debounce_miss']:
+                      'retry', 'error', 'debounce_hit', 'debounce_miss',
+                      'debounce_error']:
             self.mocks[event] = Mock()
 
     def reset_mocks(self):
@@ -83,6 +85,7 @@ class TestDeferrable(TestCase):
         global RETRIABLE_ALLOW_FAIL
         RETRIABLE_ALLOW_FAIL = True
         self.item = {'id': str(uuid1())}
+        instance.redis_client = redis_client
 
     def tearDown(self):
         instance.clear_metadata_producer_consumers()
@@ -277,6 +280,18 @@ class TestDeferrable(TestCase):
         event_consumer.assert_event_emitted('pop')
         event_consumer.assert_event_emitted('complete')
         self.assertEqual(2, len(my_mock.mock_calls))
+
+    def test_debounce_when_it_encounters_an_error(self):
+        instance.redis_client = broken_redis_client
+        debounced_deferrable.later('beans', 'cornbread')
+        event_consumer.assert_event_emitted('push')
+        event_consumer.assert_event_emitted('debounce_error')
+
+        # Item should have been queued for immediate execution
+        instance.run_once()
+        event_consumer.assert_event_emitted('pop')
+        event_consumer.assert_event_emitted('complete')
+        self.assertEqual(1, len(my_mock.mock_calls))
 
     def test_runs_with_ttl(self):
         ttl_deferrable.later('beans', 'cornbread')
