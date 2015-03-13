@@ -16,7 +16,7 @@ from deferrable.backend.memory import InMemoryBackendFactory
 # run these with each backend (TODO). Factories specified and
 # commented out to allow quick manual testing of each.
 redis_client = StrictRedis()
-factory = DocketsBackendFactory(redis_client, wait_time=-1)
+factory = DocketsBackendFactory(redis_client, wait_time=1)
 # factory = InMemoryBackendFactory()
 backend = factory.create_backend_for_group('testing')
 instance = Deferrable(backend, redis_client=redis_client)

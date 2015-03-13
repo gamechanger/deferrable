@@ -1,5 +1,5 @@
 install_requires = [
-    'Dockets>=0.3.4,<0.4.0',
+    'Dockets>=0.4.0,<0.5.0',
     'boto>=2.26.0',
 ]
 
