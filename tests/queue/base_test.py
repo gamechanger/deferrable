@@ -33,7 +33,7 @@ class TestAllQueueImplementations(TestCase):
 
     def all_queues(self):
         redis_client = StrictRedis(db=15)
-        factory = DocketsBackendFactory(redis_client, wait_time=-1)
+        factory = DocketsBackendFactory(redis_client, wait_time=1)
         backend = factory.create_backend_for_group('testing')
         yield backend.queue
         yield backend.error_queue
