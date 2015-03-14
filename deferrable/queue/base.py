@@ -21,9 +21,9 @@ class Queue(object):
         """Should return a dictionary with as many of the following
         stat keys as the queue can report on:
 
-        - items_available
-        - items_in_flight
-        - items_delayed
+        - available
+        - in_flight
+        - delayed
         """
         raise NotImplementedError()
 

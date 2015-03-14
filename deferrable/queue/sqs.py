@@ -58,6 +58,6 @@ class SQSQueue(Queue):
 
     def _stats(self):
         attributes = self.queue.get_attributes()
-        return {'items_available': int(attributes['ApproximateNumberOfMessages']),
-                'items_in_flight': int(attributes['ApproximateNumberOfMessagesNotVisible']),
-                'items_delayed': int(attributes['ApproximateNumberOfMessagesDelayed'])}
+        return {'available': int(attributes['ApproximateNumberOfMessages']),
+                'in_flight': int(attributes['ApproximateNumberOfMessagesNotVisible']),
+                'delayed': int(attributes['ApproximateNumberOfMessagesDelayed'])}

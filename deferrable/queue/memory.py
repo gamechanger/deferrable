@@ -57,6 +57,6 @@ class InMemoryQueue(Queue):
         self.delay_queue = PriorityQueue()
 
     def _stats(self):
-        return {'items_available': self.queue.qsize(),
-                'items_in_flight': 0,
-                'items_delayed': self.delay_queue.qsize()}
+        return {'available': self.queue.qsize(),
+                'in_flight': 0,
+                'delayed': self.delay_queue.qsize()}

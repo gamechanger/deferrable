@@ -45,9 +45,9 @@ class DocketsQueue(Queue):
             self._complete(envelope)
 
     def _stats(self):
-        return {'items_available': self.queue.queued(),
-                'items_in_flight': self.queue.working(),
-                'items_delayed': self.queue.delayed()}
+        return {'available': self.queue.queued(),
+                'in_flight': self.queue.working(),
+                'delayed': self.queue.delayed()}
 
 class DocketsErrorQueue(Queue):
     FIFO = False
@@ -92,4 +92,4 @@ class DocketsErrorQueue(Queue):
             self.queue.delete_error(error_id)
 
     def _stats(self):
-        return {'items_available': self.queue.length()}
+        return {'available': self.queue.length()}
