@@ -21,9 +21,6 @@ class DocketsQueue(Queue):
     def make_error_queue(self):
         return DocketsErrorQueue(self.queue)
 
-    def __len__(self):
-        return self.queue.queued()
-
     def _push(self, item):
         push_kwargs = {}
         for key in PUSH_KWARGS_KEYS:
@@ -47,15 +44,17 @@ class DocketsQueue(Queue):
                 break
             self._complete(envelope)
 
+    def _stats(self):
+        return {'available': self.queue.queued(),
+                'in_flight': self.queue.working(),
+                'delayed': self.queue.delayed()}
+
 class DocketsErrorQueue(Queue):
     FIFO = False
     SUPPORTS_DELAY = False
 
     def __init__(self, parent_dockets_queue):
         self.queue = dockets.error_queue.ErrorQueue(parent_dockets_queue)
-
-    def __len__(self):
-        return self.queue.length()
 
     def _push(self, item):
         """This error ID dance is Dockets-specific, since we need the ID
@@ -91,3 +90,6 @@ class DocketsErrorQueue(Queue):
     def _flush(self):
         for error_id in self.queue.error_ids():
             self.queue.delete_error(error_id)
+
+    def _stats(self):
+        return {'available': self.queue.length()}

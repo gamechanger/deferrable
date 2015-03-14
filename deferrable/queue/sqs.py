@@ -38,9 +38,6 @@ class SQSQueue(Queue):
                 break
         self.wait_time = stored_wait_time
 
-    def __len__(self):
-        return int(self.queue.get_attributes()['ApproximateNumberOfMessages'])
-
     def _push(self, item):
         message = Message()
         message.set_body(dumps(item))
@@ -58,3 +55,9 @@ class SQSQueue(Queue):
 
     def _flush(self):
         self.sqs_connection.purge_queue(self.queue)
+
+    def _stats(self):
+        attributes = self.queue.get_attributes()
+        return {'available': int(attributes['ApproximateNumberOfMessages']),
+                'in_flight': int(attributes['ApproximateNumberOfMessagesNotVisible']),
+                'delayed': int(attributes['ApproximateNumberOfMessagesDelayed'])}

@@ -5,9 +5,6 @@ class Queue(object):
     def __init__(self, *args, **kwargs):
         raise NotImplementedError()
 
-    def __len__(self):
-        raise NotImplementedError()
-
     def _push(self, item):
         raise NotImplementedError()
 
@@ -18,6 +15,16 @@ class Queue(object):
         raise NotImplementedError()
 
     def _flush(self):
+        raise NotImplementedError()
+
+    def _stats(self):
+        """Should return a dictionary with as many of the following
+        stat keys as the queue can report on:
+
+        - available
+        - in_flight
+        - delayed
+        """
         raise NotImplementedError()
 
     def push(self, item):
@@ -31,3 +38,6 @@ class Queue(object):
 
     def flush(self):
         return self._flush()
+
+    def stats(self):
+        return self._stats()

@@ -95,7 +95,7 @@ class TestDeferrable(TestCase):
         my_mock.reset_mock()
 
     def test_push_item_to_error_queue(self):
-        self.assertEqual(0, len(backend.error_queue))
+        self.assertEqual(0, backend.error_queue.stats()['available'])
 
         try:
             1/0
@@ -104,7 +104,7 @@ class TestDeferrable(TestCase):
 
         event_consumer.assert_event_emitted('error')
 
-        self.assertEqual(1, len(backend.error_queue))
+        self.assertEqual(1, backend.error_queue.stats()['available'])
         envelope, item = backend.error_queue.pop()
         event_consumer.assert_event_emitted('pop')
         self.assertEqual(item['id'], self.item['id'])
@@ -182,8 +182,8 @@ class TestDeferrable(TestCase):
         event_consumer.assert_event_emitted('error')
         event_consumer.assert_event_emitted('complete')
 
-        self.assertEqual(0, len(instance.backend.queue))
-        self.assertEqual(1, len(instance.backend.error_queue))
+        self.assertEqual(0, instance.backend.queue.stats()['available'])
+        self.assertEqual(1, instance.backend.error_queue.stats()['available'])
 
     def test_delay(self):
         delayed_deferrable.later('beans', 'cornbread')

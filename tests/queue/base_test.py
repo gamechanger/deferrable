@@ -50,14 +50,14 @@ class TestAllQueueImplementations(TestCase):
 
     def test_len_with_no_items(self):
         for queue in self.all_queues():
-            self.assertEquals(0, len(queue))
+            self.assertEquals(0, queue.stats()['available'])
 
     def test_push_increments_len(self):
         for queue in self.all_queues():
             queue.push(self.test_item_1)
-            self.assertEquals(1, len(queue))
+            self.assertEquals(1, queue.stats()['available'])
             queue.push(self.test_item_2)
-            self.assertEquals(2, len(queue))
+            self.assertEquals(2, queue.stats()['available'])
 
     def test_push_pop_complete(self):
         for queue in self.all_queues():
@@ -65,7 +65,7 @@ class TestAllQueueImplementations(TestCase):
             envelope, item = queue.pop()
             self.assertEqual(item, self.test_item_1)
             queue.complete(envelope)
-            self.assertEqual(0, len(queue))
+            self.assertEqual(0, queue.stats()['available'])
 
     def test_pop_is_fifo_with_completes(self):
         for queue in self.all_queues():
@@ -87,15 +87,15 @@ class TestAllQueueImplementations(TestCase):
                 logging.warn('Skipping test for non-delayable queue {}'.format(queue))
                 continue
             queue.push(self.test_item_delay)
-            self.assertEqual(0, len(queue))
+            self.assertEqual(0, queue.stats()['available'])
 
             envelope, item = queue.pop()
             self.assertIsNone(envelope)
             self.assertIsNone(item)
-            self.assertEqual(0, len(queue))
+            self.assertEqual(0, queue.stats()['available'])
             time.sleep(1.01)
 
             envelope, item = queue.pop()
             self.assertIsNotNone(envelope)
             self.assertIsNotNone(item)
-            self.assertEqual(0, len(queue))
+            self.assertEqual(0, queue.stats()['available'])
