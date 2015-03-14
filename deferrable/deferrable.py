@@ -178,7 +178,7 @@ class Deferrable(object):
             self._emit('debounce_error', item)
 
     def _deferrable(self, method, error_classes=None, max_attempts=None,
-                    delay_seconds=0, debounce_seconds=0, debounce_always_delay=False, ttl_seconds=None):
+                    delay_seconds=0, debounce_seconds=0, debounce_always_delay=False, ttl_seconds=0):
         self._validate_deferrable_args(max_attempts, delay_seconds, debounce_seconds, debounce_always_delay, ttl_seconds)
 
         def later(*args, **kwargs):
