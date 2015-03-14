@@ -142,21 +142,40 @@ class Deferrable(object):
             if delay_seconds > ttl_seconds or debounce_seconds > ttl_seconds:
                 raise ValueError('delay_seconds or debounce_seconds must be less than ttl_seconds')
 
-    def _process_debounce(self, item, debounce_seconds, debounce_always_delay):
-        debounce_strategy, seconds_to_delay = get_debounce_strategy(self.redis_client, item, debounce_seconds, debounce_always_delay)
+    def _apply_delay_and_skip_for_debounce(self, item, debounce_seconds, debounce_always_delay):
+        """Modifies the item in place to meet the debouncing constraints set by `debounce_seconds`
+        and `debounce_always_delay`. When `debounce_always_delay` is `False`, debouncing attempts
+        to run items as quickly as possible with the caveat that the same item is only run at most
+        once every `debounce_seconds` seconds. When `debounce_always_delay` is `True`, the same
+        constraint applies with the additional constraint that the first queueing of an item will
+        incur the full delay time.
 
-        if debounce_strategy == DebounceStrategy.SKIP:
-            self._emit('debounce_hit', item)
-            return debounce_strategy, seconds_to_delay
-        self._emit('debounce_miss', item)
+        - delay: Seconds by which to delay the item.
+        - debounce_skip: If set to True, the item gets debounced and will not be queued.
 
-        if debounce_strategy == DebounceStrategy.PUSH_NOW:
-            set_last_push_time(self.redis_client, item, time.time(), debounce_seconds)
-        elif debounce_strategy == DebounceStrategy.PUSH_DELAYED:
-            set_last_push_time(self.redis_client, item, time.time() + seconds_to_delay, debounce_seconds)
-            set_debounce_key(self.redis_client, item, seconds_to_delay)
+        If an exception is encountered, we set `delay` to `None` so that the item is immediately
+        queued for processing. We do not want a failure in debounce to stop the item from being
+        processed."""
+        try:
+            debounce_strategy, seconds_to_delay = get_debounce_strategy(self.redis_client, item, debounce_seconds, debounce_always_delay)
 
-        return debounce_strategy, seconds_to_delay
+            if debounce_strategy == DebounceStrategy.SKIP:
+                item['debounce_skip'] = True
+                self._emit('debounce_hit', item)
+                return
+            self._emit('debounce_miss', item)
+
+            if debounce_strategy == DebounceStrategy.PUSH_NOW:
+                set_last_push_time(self.redis_client, item, time.time(), debounce_seconds)
+            elif debounce_strategy == DebounceStrategy.PUSH_DELAYED:
+                set_last_push_time(self.redis_client, item, time.time() + seconds_to_delay, debounce_seconds)
+                set_debounce_key(self.redis_client, item, seconds_to_delay)
+
+            item['delay'] = seconds_to_delay or None
+        except: # Skip debouncing if we hit an error, don't fail completely
+            logging.exception("Encountered error while attempting to process debounce")
+            item['delay'] = None
+            self._emit('debounce_error', item)
 
     def _deferrable(self, method, error_classes=None, max_attempts=None,
                     delay_seconds=None, debounce_seconds=False, debounce_always_delay=False, ttl_seconds=None):
@@ -176,21 +195,12 @@ class Deferrable(object):
             if ttl_seconds:
                 add_ttl_metadata_to_item(item, ttl_seconds)
 
-            seconds_to_delay = delay_seconds or debounce_seconds
             if debounce_seconds:
-                try:
-                    debounce_strategy, seconds_to_delay = self._process_debounce(item,
-                                                                                 debounce_seconds,
-                                                                                 debounce_always_delay)
-                except: # Skip debouncing if we hit an error, don't fail completely
-                    logging.exception("Encountered error while attempting to process debounce")
-                    seconds_to_delay = None
-                    self._emit('debounce_error', item)
-                else:
-                    if debounce_strategy == DebounceStrategy.SKIP:
-                        return
-
-            item['delay'] = seconds_to_delay or None
+                self._apply_delay_and_skip_for_debounce(item, debounce_seconds, debounce_always_delay)
+                if item.get('debounce_skip'):
+                    return
+            else:
+                item['delay'] = delay_seconds or None
 
             for producer_consumer in self._metadata_producer_consumers:
                 producer_consumer._apply_metadata_to_item(item)
