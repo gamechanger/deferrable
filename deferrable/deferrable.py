@@ -121,9 +121,6 @@ class Deferrable(object):
         self._emit('error', item)
 
     def _validate_deferrable_args(self, max_attempts, delay_seconds, debounce_seconds, debounce_always_delay, ttl_seconds):
-        if max_attempts and (not isinstance(max_attempts, int)):
-            raise TypeError('max_attempts must be int, received {}'.format(max_attempts))
-
         if debounce_seconds and not self.redis_client:
             raise ValueError('redis_client is required for debounce')
 
@@ -177,7 +174,7 @@ class Deferrable(object):
             item['delay'] = 0
             self._emit('debounce_error', item)
 
-    def _deferrable(self, method, error_classes=None, max_attempts=None,
+    def _deferrable(self, method, error_classes=None, max_attempts=1,
                     delay_seconds=0, debounce_seconds=0, debounce_always_delay=False, ttl_seconds=0):
         self._validate_deferrable_args(max_attempts, delay_seconds, debounce_seconds, debounce_always_delay, ttl_seconds)
 
