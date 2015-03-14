@@ -34,6 +34,16 @@ class DocketsQueue(Queue):
             return envelope, envelope.get('item')
         return None, None
 
+    def _pop_batch(self, batch_size):
+        batch = []
+        for _ in range(batch_size):
+            envelope, item = self._pop()
+            if envelope:
+                batch.append((envelope, item))
+            else:
+                break
+        return batch
+
     def _complete(self, envelope):
         return self.queue.complete(envelope)
 
@@ -80,6 +90,19 @@ class DocketsErrorQueue(Queue):
             error = self.queue.error(error_id)
             return error, error
         return None, None
+
+    def _pop_batch(self, batch_size):
+        """Similar to _pop, but returns a list of tuples containing batch_size pops
+        from our queue.
+        Again, this does not actually pop from the queue until we call _complete on
+        each queued item"""
+        error_ids = self.queue.error_ids()
+        batch = []
+        if error_ids:
+            for error_id in error_ids[:batch_size]:
+                error = self.queue.error(error_id)
+                batch.append((error, error))
+        return batch
 
     def _complete(self, envelope):
         error_id = envelope['error']['id']

@@ -49,6 +49,16 @@ class InMemoryQueue(Queue):
         except Empty:
             return None, None
 
+    def _pop_batch(self, batch_size):
+        batch = []
+        for _ in range(batch_size):
+            envelope, item = self._pop()
+            if envelope:
+                batch.append((envelope, item))
+            else:
+                break
+        return batch
+
     def _complete(self, envelope):
         pass
 
