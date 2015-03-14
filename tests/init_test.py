@@ -31,7 +31,7 @@ class EventConsumer(object):
 
     def assert_event_emitted(self, event):
         mock = self.mocks[event]
-        assert mock.called_once()
+        assert mock.call_count == 1
 
     def assert_event_not_emitted(self, event):
         mock = self.mocks[event]
@@ -103,7 +103,6 @@ class TestDeferrable(TestCase):
 
         self.assertEqual(1, backend.error_queue.stats()['available'])
         envelope, item = backend.error_queue.pop()
-        event_consumer.assert_event_emitted('pop')
         self.assertEqual(item['id'], self.item['id'])
         self.assertEqual(item['error']['error_type'], 'ZeroDivisionError')
 
@@ -215,13 +214,14 @@ class TestDeferrable(TestCase):
         # And this one gets debounced and skipped
         event_consumer.reset_mocks()
         debounced_deferrable.later('beans', 'cornbread')
-        event_consumer.assert_event_emitted('push')
+        event_consumer.assert_event_not_emitted('push')
         event_consumer.assert_event_emitted('debounce_hit')
         instance.run_once()
-        event_consumer.assert_event_emitted('pop')
-        event_consumer.assert_event_emitted('complete')
+        event_consumer.assert_event_not_emitted('pop')
+        event_consumer.assert_event_not_emitted('complete')
         self.assertEqual(1, len(my_mock.mock_calls))
 
+        # Now the delayed one gets processed after a sleep
         event_consumer.reset_mocks()
         time.sleep(1.01)
         instance.run_once()
