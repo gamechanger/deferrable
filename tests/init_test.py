@@ -14,7 +14,8 @@ from deferrable.backend.dockets import DocketsBackendFactory
 # passes the standard queue tests. Ideally, we'd want to run these
 # with each backend. TODO.
 redis_client = StrictRedis()
-broken_redis_client = StrictRedis(host='google.com', socket_timeout=0.1)
+broken_redis_client = Mock()
+broken_redis_client.get.side_effect = ValueError()
 factory = DocketsBackendFactory(redis_client, wait_time=0)
 backend = factory.create_backend_for_group('testing')
 instance = Deferrable(backend, redis_client=redis_client)
