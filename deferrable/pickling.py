@@ -1,7 +1,9 @@
-import cPickle as pickle
+"""Unified pickling imports throughout the project. Any module in this
+project, or any external code which needs direct access to the serialized
+deferred item, should use the functions defined here instead of importing
+`pickle` or `cPickle` directly."""
 
-# Just defining these here so we have one unified pickle module
-# import across the project
+import cPickle as pickle
 
 def loads(string):
     if string is None:

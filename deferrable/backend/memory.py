@@ -5,7 +5,7 @@ class InMemoryBackendFactory(BackendFactory):
     def __init__(self, timeout=None):
         self.timeout = timeout
 
-    def create_backend_for_group(self, group):
+    def _create_backend_for_group(self, group):
         queue_name = self._queue_name(group)
         queue = InMemoryQueue(queue_name, self.timeout)
         error_queue = InMemoryQueue(queue_name, self.timeout)

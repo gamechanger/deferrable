@@ -11,6 +11,17 @@ from .ttl import add_ttl_metadata_to_item, item_is_expired
 
 class Deferrable(object):
     """
+    The Deferrable class provides an interface for deferred, distributed execution of
+    module-level functions, using the provided backend for transport.
+
+    Once instantiated, the Deferrable object is primarily used through two
+    public methods:
+
+    - @instance.deferrable: Decorator used to register a function for deferred execution.
+    - instance.run_once(): Method to pop one deferred function off the backend queue and
+                           execute it, subject to execution properties on the deferrable
+                           instance and the specific deferred task itself (e.g. TTL)
+
     The following events are emitted by Deferrable and may be consumed by
     registering event handlers with the appropriate `on_{event}` methods,
     each of which takes the queue item as its sole argument. Event handlers
@@ -37,6 +48,19 @@ class Deferrable(object):
         self._event_consumers = []
 
     def deferrable(self, *args, **kwargs):
+        """Decorator. Use this to register a function with this Deferrable
+        instance. Example usage:
+
+        @deferrable_instance.deferrable
+        def some_function():
+            pass
+
+        Any arguments given to `deferrable` are passed as-is to `_deferrable`.
+
+        @deferrable_instance.deferrable(error_classes=[ValueError])
+        def some_function():
+            pass
+        """
         if len(args) == 1 and callable(args[0]) and not kwargs:
             method = args[0]
             return self._deferrable(method)
@@ -95,6 +119,9 @@ class Deferrable(object):
         self._event_consumers = []
 
     def _emit(self, event, item):
+        """Run any handler methods on registered event consumers for the given event,
+        passing the item to the method. Processes the event consumers in the order
+        they were registered."""
         handler_name = 'on_{}'.format(event)
         for event_consumer in self._event_consumers:
             if hasattr(event_consumer, handler_name):
@@ -141,11 +168,7 @@ class Deferrable(object):
 
     def _apply_delay_and_skip_for_debounce(self, item, debounce_seconds, debounce_always_delay):
         """Modifies the item in place to meet the debouncing constraints set by `debounce_seconds`
-        and `debounce_always_delay`. When `debounce_always_delay` is `False`, debouncing attempts
-        to run items as quickly as possible with the caveat that the same item is only run at most
-        once every `debounce_seconds` seconds. When `debounce_always_delay` is `True`, the same
-        constraint applies with the additional constraint that the first queueing of an item will
-        incur the full delay time.
+        and `debounce_always_delay`. For more detail, see the `debouncing` module.
 
         - delay: Seconds by which to delay the item.
         - debounce_skip: If set to True, the item gets debounced and will not be queued.

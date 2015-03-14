@@ -1,3 +1,10 @@
+"""TTL provides functions for ensuring a queued item is skipped
+at processing-time if `ttl_seconds` seconds have expired since
+the original `push` of the item to the main queue.
+
+This is primarily useful for time-sensitive workloads such as
+SMS messaging."""
+
 import time
 
 def add_ttl_metadata_to_item(item, ttl_seconds):

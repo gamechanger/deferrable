@@ -1,5 +1,9 @@
 class BackendFactory(object):
-    def create_backend_for_group(self, group, *args, **kwargs):
+    """Abstract class for creating an implementation-specific
+    BackendFactory. Your subclass should override the
+    `_create_backend_for_group` private method."""
+
+    def _create_backend_for_group(self, group, *args, **kwargs):
         raise NotImplementedError()
 
     @staticmethod
@@ -8,6 +12,9 @@ class BackendFactory(object):
         if group:
             return '{}_{}'.format(base, group)
         return base
+
+    def create_backend_for_group(self, group, *args, **kwargs):
+        return self._create_backend_for_group(group, *args, **kwargs)
 
 class Backend(object):
     def __init__(self, group, queue, error_queue):

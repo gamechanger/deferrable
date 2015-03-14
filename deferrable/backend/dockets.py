@@ -11,7 +11,7 @@ class DocketsBackendFactory(BackendFactory):
         self.wait_time = wait_time
         self.timeout = timeout
 
-    def create_backend_for_group(self, group):
+    def _create_backend_for_group(self, group):
         queue = DocketsQueue(self.redis_client,
                              self._queue_name(group),
                              self.wait_time,
