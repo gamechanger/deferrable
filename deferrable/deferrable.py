@@ -121,9 +121,6 @@ class Deferrable(object):
         self._emit('error', item)
 
     def _validate_deferrable_args(self, max_attempts, delay_seconds, debounce_seconds, debounce_always_delay, ttl_seconds):
-        if max_attempts and (not isinstance(max_attempts, int)):
-            raise TypeError('max_attempts must be int, received {}'.format(max_attempts))
-
         if debounce_seconds and not self.redis_client:
             raise ValueError('redis_client is required for debounce')
 
@@ -171,14 +168,14 @@ class Deferrable(object):
                 set_last_push_time(self.redis_client, item, time.time() + seconds_to_delay, debounce_seconds)
                 set_debounce_key(self.redis_client, item, seconds_to_delay)
 
-            item['delay'] = seconds_to_delay or None
+            item['delay'] = seconds_to_delay
         except: # Skip debouncing if we hit an error, don't fail completely
             logging.exception("Encountered error while attempting to process debounce")
-            item['delay'] = None
+            item['delay'] = 0
             self._emit('debounce_error', item)
 
-    def _deferrable(self, method, error_classes=None, max_attempts=None,
-                    delay_seconds=None, debounce_seconds=False, debounce_always_delay=False, ttl_seconds=None):
+    def _deferrable(self, method, error_classes=None, max_attempts=1,
+                    delay_seconds=0, debounce_seconds=0, debounce_always_delay=False, ttl_seconds=0):
         self._validate_deferrable_args(max_attempts, delay_seconds, debounce_seconds, debounce_always_delay, ttl_seconds)
 
         def later(*args, **kwargs):
@@ -200,7 +197,7 @@ class Deferrable(object):
                 if item.get('debounce_skip'):
                     return
             else:
-                item['delay'] = delay_seconds or None
+                item['delay'] = delay_seconds
 
             for producer_consumer in self._metadata_producer_consumers:
                 producer_consumer._apply_metadata_to_item(item)

@@ -8,8 +8,6 @@ import dockets.error_queue
 
 from .base import Queue
 
-PUSH_KWARGS_KEYS = ['delay']
-
 class DocketsQueue(Queue):
     def __init__(self, redis_client, queue_name, wait_time, timeout):
         self.queue = dockets.queue.Queue(redis_client,
@@ -23,9 +21,8 @@ class DocketsQueue(Queue):
 
     def _push(self, item):
         push_kwargs = {}
-        for key in PUSH_KWARGS_KEYS:
-            if key in item:
-                push_kwargs[key] = item[key]
+        if 'delay' in item:
+            push_kwargs['delay'] = item['delay'] or None
         self.queue.push(item, **push_kwargs)
 
     def _pop(self):
