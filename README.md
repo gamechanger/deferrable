@@ -1,7 +1,7 @@
 Deferrable
 ==========
 
-Python queueing framework with pluggable backends. Currently supports [https://github.com/gamechanger/dockets](Dockets), [http://aws.amazon.com/sqs/](SQS), and [https://docs.python.org/2/library/queue.html](Python's stdlib Queue).
+Python queueing framework with pluggable backends. Currently supports [Dockets](https://github.com/gamechanger/dockets), [SQS](http://aws.amazon.com/sqs/), and [Python's stdlib Queue](https://docs.python.org/2/library/queue.html).
 
 ## Table of Contents
 
