@@ -25,26 +25,34 @@ class TestAllQueueImplementations(TestCase):
         self._flush_all_queues()
 
     def _flush_all_queues(self):
-        for queue in self.all_queues():
+        for queue in self.all_queues(verbose=False):
             if hasattr(queue, '_slow_flush'):
                 queue._slow_flush()
             else:
                 queue.flush()
 
-    def all_queues(self):
+    def all_queues(self, verbose=True):
         redis_client = StrictRedis(db=15)
         factory = DocketsBackendFactory(redis_client, wait_time=0)
         backend = factory.create_backend_for_group('testing')
+        if verbose: 
+            print "Testing Dockets Queue..."
         yield backend.queue
+        if verbose:
+            print "Testing Dockets Error Queue..."
         yield backend.error_queue
 
         backend = InMemoryBackendFactory().create_backend_for_group('testing')
+        if verbose:
+            print "Testing Memory Queue..."
         yield backend.queue
 
         fake_sqs = mock_sqs()
         fake_sqs.start()
         factory = SQSBackendFactory(SQSConnection(), wait_time=None, create_if_missing=True)
         backend = factory.create_backend_for_group('testing')
+        if verbose:
+            print "Testing SQS Queue..."
         yield backend.queue
         fake_sqs.stop()
 
@@ -80,6 +88,17 @@ class TestAllQueueImplementations(TestCase):
             envelope, item = queue.pop()
             self.assertEqual(item, self.test_item_2)
             queue.complete(envelope)
+
+    def test_pop_batch(self):
+        for queue in self.all_queues():
+            queue.push(self.test_item_1)
+            queue.push(self.test_item_2)
+            self.assertEquals(2, queue.stats()['available'])
+            batch = queue.pop_batch(2)
+            self.assertEqual(2, len(batch))
+            if queue.FIFO:
+                self.assertEqual(self.test_item_1, batch[0][1])
+                self.assertEqual(self.test_item_2, batch[1][1])
 
     def test_push_with_delay(self):
         for queue in self.all_queues():

@@ -1,3 +1,5 @@
+import sys
+
 class Queue(object):
     """Abstract class for creating backend-specific queue implementations.
     Your implementation should override all private methods and alter any
@@ -5,6 +7,7 @@ class Queue(object):
 
     FIFO = True
     SUPPORTS_DELAY = True
+    MAX_POP_BATCH_SIZE = sys.maxint
 
     def __init__(self, *args, **kwargs):
         raise NotImplementedError()
@@ -13,6 +16,9 @@ class Queue(object):
         raise NotImplementedError()
 
     def _pop(self):
+        raise NotImplementedError()
+
+    def _pop_batch(self, batch_size):
         raise NotImplementedError()
 
     def _complete(self, envelope):
@@ -36,6 +42,11 @@ class Queue(object):
 
     def pop(self):
         return self._pop()
+
+    def pop_batch(self, batch_size):
+        if batch_size > self.MAX_POP_BATCH_SIZE:
+            raise ValueError("Batch size cannot exceed {}.".format(self.MAX_POP_BATCH_SIZE))
+        return self._pop_batch(batch_size)
 
     def complete(self, envelope):
         return self._complete(envelope)

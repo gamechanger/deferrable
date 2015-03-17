@@ -7,6 +7,7 @@ from ..pickling import dumps, loads
 
 class SQSQueue(Queue):
     FIFO = False
+    MAX_POP_BATCH_SIZE = 10
 
     def __init__(self, sqs_connection, queue_name, visibility_timeout, wait_time, create_if_missing=False):
         self.sqs_connection = sqs_connection
@@ -49,6 +50,15 @@ class SQSQueue(Queue):
         if not message:
             return None, None
         return message, loads(message.get_body())
+
+    def _pop_batch(self, batch_size):
+        messages = self.queue.get_messages(num_messages=batch_size, 
+                                           visibility_timeout=self.visibility_timeout,
+                                           wait_time_seconds=self.wait_time)
+        batch = []
+        for message in messages:
+            batch.append((message, loads(message.get_body())))
+        return batch
 
     def _complete(self, envelope):
         self.sqs_connection.delete_message(self.queue, envelope)
