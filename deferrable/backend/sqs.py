@@ -8,7 +8,7 @@ class SQSBackendFactory(BackendFactory):
         self.wait_time = wait_time
         self.create_if_missing = create_if_missing
 
-    def create_backend_for_group(self, group):
+    def _create_backend_for_group(self, group):
         queue = SQSQueue(self.sqs_connection,
                          self._queue_name(group),
                          self.visibility_timeout,

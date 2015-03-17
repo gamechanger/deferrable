@@ -1,3 +1,19 @@
+"""Debouncing provides functions for delaying or skipping a queue `push`
+subject to a specified debouncing constraint. When used with idempotent
+operations, this provides a safe and consistent method of throttling
+queue pushes within Deferrable itself.
+
+The debouncing constraint is defined as follows:
+
+If `debounce_always_delay` is `False`, items should be made available for
+execution as quickly as possible subject to the constraint that the same
+item be made available at most once per `debounce_seconds` seconds.
+
+If 'debounce_always_delay` is `True`, the item will be always either be
+skipped (debounced) or delayed by the full `debounce_seconds` amount. The
+constraint that the item is processed at most once per `debounce_seconds` seconds
+still holds."""
+
 import time
 
 class DebounceStrategy(object):

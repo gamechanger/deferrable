@@ -1,4 +1,8 @@
 class Queue(object):
+    """Abstract class for creating backend-specific queue implementations.
+    Your implementation should override all private methods and alter any
+    class attributes (e.g. FIFO) that do not apply to your backend."""
+
     FIFO = True
     SUPPORTS_DELAY = True
 
