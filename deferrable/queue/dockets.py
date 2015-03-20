@@ -44,6 +44,12 @@ class DocketsQueue(Queue):
     def _complete(self, envelope):
         return self.queue.complete(envelope)
 
+    def _complete_batch(self, envelopes):
+        # Dockets doesn't return any information from complete, so here we go...
+        for envelope in envelopes:
+            self._complete(envelope)
+        return [(envelope, True) for envelope in envelopes]
+
     def _flush(self):
         while True:
             envelope, item = self._pop()
@@ -105,7 +111,10 @@ class DocketsErrorQueue(Queue):
         error_id = envelope['error']['id']
         if not error_id:
             raise AttributeError('Error item has no id field: {}'.format(envelope))
-        self.queue.delete_error(error_id)
+        return self.queue.delete_error(error_id)
+
+    def _complete_batch(self, envelopes):
+        return [(envelope, bool(self._complete(envelope))) for envelope in envelopes]
 
     def _flush(self):
         for error_id in self.queue.error_ids():

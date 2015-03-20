@@ -17,9 +17,9 @@ from deferrable.backend.sqs import SQSBackendFactory
 class TestAllQueueImplementations(TestCase):
     def setUp(self):
         self._flush_all_queues()
-        self.test_item_1 = {'id': str(uuid1())}
-        self.test_item_2 = {'id': str(uuid1())}
-        self.test_item_delay = {'id': str(uuid1()), 'delay': 1}
+        self.test_item_1 = {'id': str(uuid1()), 'error': {'id': str(uuid1())}}
+        self.test_item_2 = {'id': str(uuid1()), 'error': {'id': str(uuid1())}}
+        self.test_item_delay = {'id': str(uuid1()), 'error': {'id': str(uuid1())}, 'delay': 1}
 
     def tearDown(self):
         self._flush_all_queues()
@@ -35,7 +35,7 @@ class TestAllQueueImplementations(TestCase):
         redis_client = StrictRedis(db=15)
         factory = DocketsBackendFactory(redis_client, wait_time=0)
         backend = factory.create_backend_for_group('testing')
-        if verbose: 
+        if verbose:
             print "Testing Dockets Queue..."
         yield backend.queue
         if verbose:
@@ -118,3 +118,18 @@ class TestAllQueueImplementations(TestCase):
             self.assertIsNotNone(envelope)
             self.assertIsNotNone(item)
             self.assertEqual(0, queue.stats()['available'])
+
+    def test_complete_batch(self):
+        for queue in self.all_queues():
+            queue.push(self.test_item_1)
+            queue.push(self.test_item_2)
+            envelope_1, item_1 = queue.pop()
+            envelope_2, item_2 = queue.pop()
+            # hack for Dockets error queue
+            if envelope_1 == envelope_2:
+                envelope_1 = self.test_item_1
+                envelope_2 = self.test_item_2
+            result = queue.complete_batch([envelope_1, envelope_2])
+            self.assertEqual(0, queue.stats()['available'])
+            self.assertEqual(0, queue.stats().get('in_flight', 0))
+            self.assertEqual(result, [(envelope_1, True), (envelope_2, True)])
