@@ -60,7 +60,10 @@ class InMemoryQueue(Queue):
         return batch
 
     def _complete(self, envelope):
-        pass
+        return None
+
+    def _complete_batch(self, envelopes):
+        return [(envelope, True) for envelope in envelopes]
 
     def _flush(self):
         self.queue = PythonQueue()

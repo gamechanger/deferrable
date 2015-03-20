@@ -8,6 +8,7 @@ from ..pickling import dumps, loads
 class SQSQueue(Queue):
     FIFO = False
     MAX_POP_BATCH_SIZE = 10
+    MAX_COMPLETE_BATCH_SIZE = 10
 
     def __init__(self, sqs_connection, queue_name, visibility_timeout, wait_time, create_if_missing=False):
         self.sqs_connection = sqs_connection
@@ -52,7 +53,7 @@ class SQSQueue(Queue):
         return message, loads(message.get_body())
 
     def _pop_batch(self, batch_size):
-        messages = self.queue.get_messages(num_messages=batch_size, 
+        messages = self.queue.get_messages(num_messages=batch_size,
                                            visibility_timeout=self.visibility_timeout,
                                            wait_time_seconds=self.wait_time)
         batch = []
@@ -61,7 +62,15 @@ class SQSQueue(Queue):
         return batch
 
     def _complete(self, envelope):
-        self.sqs_connection.delete_message(self.queue, envelope)
+        return self.sqs_connection.delete_message(self.queue, envelope)
+
+    def _complete_batch(self, envelopes):
+        response = self.sqs_connection.delete_message_batch(self.queue, envelopes)
+        id_map = {success['id']: True
+                  for success in response.results}
+        id_map.update({failure['id']: False
+                       for failure in response.errors})
+        return [(envelope, id_map[envelope.id]) for envelope in envelopes]
 
     def _flush(self):
         self.sqs_connection.purge_queue(self.queue)
