@@ -46,6 +46,8 @@ class DocketsQueue(Queue):
 
     def _complete_batch(self, envelopes):
         # Dockets doesn't return any information from complete, so here we go...
+        for envelope in envelopes:
+            self._complete(envelope)
         return [(envelope, True) for envelope in envelopes]
 
     def _flush(self):

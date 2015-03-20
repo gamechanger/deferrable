@@ -131,4 +131,5 @@ class TestAllQueueImplementations(TestCase):
                 envelope_2 = self.test_item_2
             result = queue.complete_batch([envelope_1, envelope_2])
             self.assertEqual(0, queue.stats()['available'])
+            self.assertEqual(0, queue.stats().get('in_flight', 0))
             self.assertEqual(result, [(envelope_1, True), (envelope_2, True)])
