@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import time
+import logging
 from Queue import Queue as PythonQueue, PriorityQueue, Empty
 
 from .base import Queue
@@ -47,7 +48,8 @@ class InMemoryQueue(Queue):
             try:
                 self._push(item)
                 result.append((item, True))
-            except:
+            except Exception:
+                logging.exception("Error pushing item {}".format(item))
                 result.append((item, False))
         return result
 
