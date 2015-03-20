@@ -1,5 +1,8 @@
 from __future__ import absolute_import
 
+from uuid import uuid1
+from collections import OrderedDict
+
 from boto.sqs.message import Message
 
 from .base import Queue
@@ -43,7 +46,21 @@ class SQSQueue(Queue):
     def _push(self, item):
         message = Message()
         message.set_body(dumps(item))
-        self.queue.write(message, delay_seconds=item.get('delay') or None)
+        return self.queue.write(message, delay_seconds=item.get('delay') or None)
+
+    def _push_batch(self, items):
+        id_map = OrderedDict()
+        payloads = []
+        for item in items:
+            message = Message()
+            message.set_body(dumps(item))
+            new_message_id = str(uuid1())
+            id_map[new_message_id] = item
+            payloads.append((new_message_id, message.get_body_encoded(), item.get('delay') or 0))
+        response = self.queue.write_batch(payloads)
+        success_ids = {success['id'] for success in response.results}
+        return [(item, item_id in success_ids)
+                for item_id, item in id_map.iteritems()]
 
     def _pop(self):
         message = self.queue.read(visibility_timeout=self.visibility_timeout,

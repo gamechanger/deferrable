@@ -41,6 +41,16 @@ class InMemoryQueue(Queue):
         else:
             self.queue.put(item)
 
+    def _push_batch(self, items):
+        result = []
+        for item in items:
+            try:
+                self._push(item)
+                result.append((item, True))
+            except:
+                result.append((item, False))
+        return result
+
     def _pop(self):
         self._move_from_delay_queue()
         try:

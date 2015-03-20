@@ -75,6 +75,13 @@ class TestAllQueueImplementations(TestCase):
             queue.complete(envelope)
             self.assertEqual(0, queue.stats()['available'])
 
+    def test_push_pop_batch(self):
+        for queue in self.all_queues():
+            queue.push_batch([self.test_item_1, self.test_item_2])
+            self.assertEqual(2, queue.stats()['available'])
+            batch = queue.pop_batch(2)
+            self.assertItemsEqual(map(lambda x: x[1], batch), [self.test_item_1, self.test_item_2])
+
     def test_pop_is_fifo_with_completes(self):
         for queue in self.all_queues():
             if not queue.FIFO:
