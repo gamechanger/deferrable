@@ -210,7 +210,10 @@ class Deferrable(object):
                 'attempts': 0,
                 'max_attempts': max_attempts,
                 'first_push_time': now,
-                'last_push_time': now
+                'last_push_time': now,
+                'original_delay_seconds': delay_seconds,
+                'original_debounce_seconds': debounce_seconds,
+                'original_debounce_always_delay': debounce_always_delay
             })
             if ttl_seconds:
                 add_ttl_metadata_to_item(item, ttl_seconds)
