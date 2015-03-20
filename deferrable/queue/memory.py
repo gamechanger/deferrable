@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import time
+import logging
 from Queue import Queue as PythonQueue, PriorityQueue, Empty
 
 from .base import Queue
@@ -40,6 +41,17 @@ class InMemoryQueue(Queue):
             self._push_to_delay_queue(item, item['delay'])
         else:
             self.queue.put(item)
+
+    def _push_batch(self, items):
+        result = []
+        for item in items:
+            try:
+                self._push(item)
+                result.append((item, True))
+            except Exception:
+                logging.exception("Error pushing item {}".format(item))
+                result.append((item, False))
+        return result
 
     def _pop(self):
         self._move_from_delay_queue()

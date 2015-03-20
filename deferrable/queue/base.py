@@ -7,6 +7,7 @@ class Queue(object):
 
     FIFO = True
     SUPPORTS_DELAY = True
+    MAX_PUSH_BATCH_SIZE = sys.maxint
     MAX_POP_BATCH_SIZE = sys.maxint
     MAX_COMPLETE_BATCH_SIZE = sys.maxint
 
@@ -14,6 +15,9 @@ class Queue(object):
         raise NotImplementedError()
 
     def _push(self, item):
+        raise NotImplementedError()
+
+    def _push_batch(self, items):
         raise NotImplementedError()
 
     def _pop(self):
@@ -46,6 +50,11 @@ class Queue(object):
 
     def push(self, item):
         return self._push(item)
+
+    def push_batch(self, items):
+        if len(items) > self.MAX_PUSH_BATCH_SIZE:
+            raise ValueError("Batch size cannot exceed {}.".format(self.MAX_PUSH_BATCH_SIZE))
+        return self._push_batch(items)
 
     def pop(self):
         return self._pop()

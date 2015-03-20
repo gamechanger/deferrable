@@ -23,7 +23,18 @@ class DocketsQueue(Queue):
         push_kwargs = {}
         if 'delay' in item:
             push_kwargs['delay'] = item['delay'] or None
-        self.queue.push(item, **push_kwargs)
+        return self.queue.push(item, **push_kwargs)
+
+    def _push_batch(self, items):
+        result = []
+        for item in items:
+            try:
+                self._push(item)
+                result.append((item, True))
+            except Exception:
+                logging.exception("Error pushing item {}".format(item))
+                result.append((item, False))
+        return result
 
     def _pop(self):
         envelope = self.queue.pop()
@@ -79,7 +90,18 @@ class DocketsErrorQueue(Queue):
             logging.warn('No error ID found for item, will generate and add one: {}'.format(item))
             error_id = str(uuid1())
             item.setdefault('error', {})['id'] = error_id
-        self.queue.queue_error_item(error_id, item)
+        return self.queue.queue_error_item(error_id, item)
+
+    def _push_batch(self, items):
+        result = []
+        for item in items:
+            try:
+                self._push(item)
+                result.append((item, True))
+            except Exception:
+                logging.exception("Error pushing item {}".format(item))
+                result.append((item, False))
+        return result
 
     def _pop(self):
         """Dockets Error Queues are not actually queues, they're hashes. There's no way
