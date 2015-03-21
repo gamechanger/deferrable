@@ -52,6 +52,11 @@ class DocketsQueue(Queue):
                 break
         return batch
 
+    def _touch(self, envelope, seconds):
+        """Dockets heartbeat is consumer-level and does not
+        utilize the envelope or seconds arguments."""
+        return self.queue._heartbeat()
+
     def _complete(self, envelope):
         return self.queue.complete(envelope)
 
@@ -128,6 +133,9 @@ class DocketsErrorQueue(Queue):
                 error = self.queue.error(error_id)
                 batch.append((error, error))
         return batch
+
+    def _touch(self, envelope, seconds):
+        return None
 
     def _complete(self, envelope):
         error_id = envelope['error']['id']

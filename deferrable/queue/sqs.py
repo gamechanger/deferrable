@@ -78,6 +78,9 @@ class SQSQueue(Queue):
             batch.append((message, loads(message.get_body())))
         return batch
 
+    def _touch(self, envelope, seconds):
+        return envelope.change_visibility(seconds)
+
     def _complete(self, envelope):
         return self.sqs_connection.delete_message(self.queue, envelope)
 

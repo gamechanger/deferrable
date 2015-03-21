@@ -26,6 +26,11 @@ class Queue(object):
     def _pop_batch(self, batch_size):
         raise NotImplementedError()
 
+    def _touch(self, envelope, seconds):
+        """Increase the visibility timeout on an
+        in-flight envelope by seconds."""
+        raise NotImplementedError()
+
     def _complete(self, envelope):
         raise NotImplementedError()
 
@@ -63,6 +68,9 @@ class Queue(object):
         if batch_size > self.MAX_POP_BATCH_SIZE:
             raise ValueError("Batch size cannot exceed {}.".format(self.MAX_POP_BATCH_SIZE))
         return self._pop_batch(batch_size)
+
+    def touch(self, envelope, seconds=10):
+        return self._touch(envelope, seconds)
 
     def complete(self, envelope):
         return self._complete(envelope)

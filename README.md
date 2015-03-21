@@ -51,7 +51,7 @@ stats.run_once()
 
 ### Queues
 
-Each broker implementation starts with a `Queue`. This class should expose a minimal interface to the underlying queue, including methods like `push`, `pop`, `complete`, and `flush`. Each queue implementation also exposes a `stats` method which allows you to introspect properties of the queue such as its length and the number of queue items that are currently in flight.
+Each broker implementation starts with a `Queue`. This class should expose a minimal interface to the underlying queue, including methods like `push`, `pop`, `touch`, `complete`, and `flush`. Each queue implementation also exposes a `stats` method which allows you to introspect properties of the queue such as its length and the number of queue items that are currently in flight.
 
 Some broker implementations may provide separate implementations for the "main" `Queue` and the "error" `Queue`. For an example of this, see the `Dockets` queue implementation.
 
@@ -60,6 +60,8 @@ Some broker implementations may provide separate implementations for the "main" 
 When you `push` to a queue, the object you supply to the `push` method is called the `item`. This is serialized and pushed to the underlying broker.
 
 When you `pop`, the `Queue` instance returns a tuple with the `envelope` and the `item`. The `item` is deserialized and should be the same as the object you supplied to `push`. The `envelope` is the complete, unaltered object that is returned from the broker. This often includes additional metadata which the broker needs to successfully call `complete`.
+
+While an `envelope` is in-flight, you may invoke the `touch` method on the `Queue` to extend the visibility timeout on the `envelope`. This keeps the job "alive" from the perspective of the broker, and it will not reclaim the job and allow other consumers to see it.
 
 The `complete` function expects to be passed the full `envelope` for the corresponding task which you want to complete.
 
