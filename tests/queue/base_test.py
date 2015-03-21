@@ -140,3 +140,11 @@ class TestAllQueueImplementations(TestCase):
             self.assertEqual(0, queue.stats()['available'])
             self.assertEqual(0, queue.stats().get('in_flight', 0))
             self.assertEqual(result, [(envelope_1, True), (envelope_2, True)])
+
+    def test_touch(self):
+        """Don't see a great way to test this one, let's just make sure
+        we can call the function for now."""
+        for queue in self.all_queues():
+            queue.push(self.test_item_1)
+            envelope, item = queue.pop()
+            queue.touch(envelope, 30)

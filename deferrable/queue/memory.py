@@ -71,6 +71,9 @@ class InMemoryQueue(Queue):
                 break
         return batch
 
+    def _touch(self, envelope, seconds):
+        return None
+
     def _complete(self, envelope):
         return None
 
