@@ -58,7 +58,7 @@ class SQSQueue(Queue):
             id_map[new_message_id] = item
             payloads.append((new_message_id, message.get_body_encoded(), item.get('delay') or 0))
         response = self.queue.write_batch(payloads)
-        success_ids = {success['id'] for success in response.results}
+        success_ids = [success['id'] for success in response.results]
         return [(item, item_id in success_ids)
                 for item_id, item in id_map.iteritems()]
 
