@@ -229,7 +229,7 @@ class HostnameMetadataProducerConsumer(MetadataProducerConsumer):
         return socket.gethostname()
 
     def consume_metadata(self, metadata):
-       print "Item was producer on host {}".format(metadata)
+       print "Item was produced on host {}".format(metadata)
 
 deferrable_instance.register_metadata_producer_consumer(HostnameMetadataProducerConsumer())
 ```
