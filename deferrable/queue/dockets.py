@@ -81,6 +81,7 @@ class DocketsQueue(Queue):
 class DocketsErrorQueue(Queue):
     FIFO = False
     SUPPORTS_DELAY = False
+    RECLAIMS_TO_BACK_OF_QUEUE = False
 
     def __init__(self, parent_dockets_queue):
         self.queue = dockets.error_queue.ErrorQueue(parent_dockets_queue)

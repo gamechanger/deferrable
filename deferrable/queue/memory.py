@@ -11,6 +11,9 @@ class InMemoryQueue(Queue):
     were popped but never completed. Pop is final and complete is a no-op.
 
     Really, you probably only want to use this backend for testing."""
+
+    RECLAIMS_TO_BACK_OF_QUEUE = False
+
     def __init__(self, group, timeout):
         self.group = group
         self.queue = PythonQueue()
