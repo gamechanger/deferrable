@@ -7,6 +7,8 @@ class Queue(object):
 
     FIFO = True
     SUPPORTS_DELAY = True
+    RECLAIMS_TO_BACK_OF_QUEUE = True
+
     MAX_PUSH_BATCH_SIZE = sys.maxint
     MAX_POP_BATCH_SIZE = sys.maxint
     MAX_COMPLETE_BATCH_SIZE = sys.maxint
