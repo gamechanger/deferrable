@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from uuid import uuid1
 from collections import OrderedDict
+import json
 
 from boto.sqs.message import Message
 
@@ -14,12 +15,12 @@ class SQSQueue(Queue):
     MAX_POP_BATCH_SIZE = 10
     MAX_COMPLETE_BATCH_SIZE = 10
 
-    def __init__(self, sqs_connection_thunk, queue_name, visibility_timeout, wait_time, create_if_missing=False):
+    def __init__(self, sqs_connection_thunk, queue_name, visibility_timeout, wait_time, redrive_queue=None):
         self.sqs_connection_thunk = sqs_connection_thunk
         self.queue_name = queue_name
         self.visibility_timeout = visibility_timeout
         self.wait_time = wait_time
-        self.create_if_missing = create_if_missing
+        self.redrive_queue = redrive_queue
 
         self._sqs_connection = None
         self._queue = None
@@ -38,8 +39,14 @@ class SQSQueue(Queue):
 
     def _get_queue_instance(self):
         instance = self.sqs_connection.get_queue(self.queue_name)
-        if instance is None and self.create_if_missing:
+
+        # Create queue if it doesn't exist yet and we passed that option to the constructor
+        if instance is None:
             instance = self.sqs_connection.create_queue(self.queue_name, visibility_timeout=self.visibility_timeout)
+            if self.redrive_queue:
+                policy = json.dumps({'maxReceiveCount': 5, 'deadLetterTargetArn': self.redrive_queue.queue.arn})
+                instance.set_attribute('RedrivePolicy', policy)
+
         if not instance:
             raise ValueError('No queue found with name {}'.format(self.queue_name))
         return instance

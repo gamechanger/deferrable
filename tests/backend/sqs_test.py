@@ -11,7 +11,7 @@ class TestSQSBackendFactory(TestCase):
         self.fake_sqs = mock_sqs()
         self.fake_sqs.start()
         self.sqs_connection = SQSConnection()
-        self.factory = SQSBackendFactory(self.sqs_connection, create_if_missing=True)
+        self.factory = SQSBackendFactory(self.sqs_connection)
 
     def tearDown(self):
         self.fake_sqs.stop()
