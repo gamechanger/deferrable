@@ -14,14 +14,27 @@ class SQSQueue(Queue):
     MAX_POP_BATCH_SIZE = 10
     MAX_COMPLETE_BATCH_SIZE = 10
 
-    def __init__(self, sqs_connection, queue_name, visibility_timeout, wait_time, create_if_missing=False):
-        self.sqs_connection = sqs_connection
+    def __init__(self, sqs_connection_thunk, queue_name, visibility_timeout, wait_time, create_if_missing=False):
+        self.sqs_connection_thunk = sqs_connection_thunk
         self.queue_name = queue_name
         self.visibility_timeout = visibility_timeout
         self.wait_time = wait_time
         self.create_if_missing = create_if_missing
 
-        self.queue = self._get_queue_instance()
+        self._sqs_connection = None
+        self._queue = None
+
+    @property
+    def sqs_connection(self):
+        if self._sqs_connection is None:
+            self._sqs_connection = self.sqs_connection_thunk()
+        return self._sqs_connection
+
+    @property
+    def queue(self):
+        if self._queue is None:
+            self._queue = self._get_queue_instance()
+        return self._queue
 
     def _get_queue_instance(self):
         instance = self.sqs_connection.get_queue(self.queue_name)
