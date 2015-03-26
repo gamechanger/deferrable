@@ -52,7 +52,16 @@ class TestAllQueueImplementations(TestCase):
         factory = SQSBackendFactory(SQSConnection(), wait_time=None, create_if_missing=True)
         backend = factory.create_backend_for_group('testing')
         if verbose:
-            print "Testing SQS Queue..."
+            print "Testing SQS Queue with initialized connection..."
+        yield backend.queue
+        fake_sqs.stop()
+
+        fake_sqs = mock_sqs()
+        fake_sqs.start()
+        factory = SQSBackendFactory(lambda: SQSConnection(), wait_time=None, create_if_missing=True)
+        backend = factory.create_backend_for_group('testing')
+        if verbose:
+            print "Testing SQS Queue with lazy connection thunk..."
         yield backend.queue
         fake_sqs.stop()
 
