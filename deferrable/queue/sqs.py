@@ -12,6 +12,7 @@ class SQSQueue(Queue):
     FIFO = False
     MAX_POP_BATCH_SIZE = 10
     MAX_COMPLETE_BATCH_SIZE = 10
+    MAX_PUSH_BATCH_SIZE = 10
 
     def __init__(self, sqs_connection, queue_name, visibility_timeout, wait_time, create_if_missing=False):
         self.sqs_connection = sqs_connection

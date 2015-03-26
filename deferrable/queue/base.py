@@ -12,6 +12,7 @@ class Queue(object):
     MAX_PUSH_BATCH_SIZE = sys.maxint
     MAX_POP_BATCH_SIZE = sys.maxint
     MAX_COMPLETE_BATCH_SIZE = sys.maxint
+    MAX_PUSH_BATCH_SIZE = sys.maxint
 
     def __init__(self, *args, **kwargs):
         raise NotImplementedError()
