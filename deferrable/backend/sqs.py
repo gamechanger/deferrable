@@ -2,11 +2,13 @@ from .base import BackendFactory, Backend
 from ..queue.sqs import SQSQueue
 
 class SQSBackendFactory(BackendFactory):
-    def __init__(self, sqs_connection_or_thunk, visibility_timeout=30, wait_time=10, create_if_missing=False):
-        if callable(sqs_connection_or_thunk):
-            self.sqs_connection_thunk = sqs_connection_or_thunk
-        else:
-            self.sqs_connection_thunk = lambda: sqs_connection_or_thunk
+    def __init__(self, sqs_connection_thunk, visibility_timeout=30, wait_time=10, create_if_missing=False):
+        """To allow backends to be initialized lazily, this factory requires a thunk
+        (parameter-less closure) which returns an initialized SQS connection. This thunk
+        is called as late as possible to initialize the connection and perform operations
+        against the SQS API. We do this so that backends can be made available at import time
+        without requiring a connection to be created at import time as well."""
+        self.sqs_connection_thunk = sqs_connection_thunk
         self.visibility_timeout = visibility_timeout
         self.wait_time = wait_time
         self.create_if_missing = create_if_missing
