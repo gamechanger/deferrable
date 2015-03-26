@@ -10,6 +10,7 @@ from ..pickling import dumps, loads
 
 class SQSQueue(Queue):
     FIFO = False
+    MAX_PUSH_BATCH_SIZE = 10
     MAX_POP_BATCH_SIZE = 10
     MAX_COMPLETE_BATCH_SIZE = 10
 
