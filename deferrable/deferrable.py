@@ -40,9 +40,10 @@ class Deferrable(object):
     - on_debounce_error : exception encountered while processing debounce logic (item will still be queued)
     """
 
-    def __init__(self, backend, redis_client=None):
+    def __init__(self, backend, redis_client=None, default_error_classes=None):
         self.backend = backend
         self.redis_client = redis_client
+        self.default_error_classes = default_error_classes
 
         self._metadata_producer_consumers = []
         self._event_consumers = []
@@ -204,9 +205,10 @@ class Deferrable(object):
         def later(*args, **kwargs):
             item = build_later_item(method, *args, **kwargs)
             now = time.time()
+            item_error_classes = error_classes if error_classes is not None else self.default_error_classes
             item.update({
                 'group': dumps(self.backend.group),
-                'error_classes': dumps(error_classes),
+                'error_classes': dumps(item_error_classes),
                 'attempts': 0,
                 'max_attempts': max_attempts,
                 'first_push_time': now,
