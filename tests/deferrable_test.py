@@ -10,6 +10,9 @@ from deferrable.metadata import MetadataProducerConsumer
 from deferrable.backend.dockets import DocketsBackendFactory
 from deferrable.backend.memory import InMemoryBackendFactory
 
+class CustomError(Exception):
+    pass
+
 # We need these at module scope so we can create a test method with
 # the decorator. These tests should work with any backend that
 # passes the standard queue tests. Ideally, we'd want to automatically
@@ -19,7 +22,7 @@ redis_client = StrictRedis()
 factory = DocketsBackendFactory(redis_client, wait_time=0)
 # factory = InMemoryBackendFactory()
 backend = factory.create_backend_for_group('testing')
-instance = Deferrable(backend, redis_client=redis_client)
+instance = Deferrable(backend, redis_client=redis_client, default_error_classes=[CustomError])
 
 class EventConsumer(object):
     def __init__(self):
@@ -63,6 +66,14 @@ def retriable_deferrable(should_raise):
     if should_raise and RETRIABLE_ALLOW_FAIL:
         my_mock(should_raise)
         raise ValueError()
+    my_mock(should_raise)
+
+@instance.deferrable(max_attempts=3)
+def retriable_deferrable_with_defaults(should_raise):
+    global RETRIABLE_ALLOW_FAIL
+    if should_raise and RETRIABLE_ALLOW_FAIL:
+        my_mock(should_raise)
+        raise CustomError()
     my_mock(should_raise)
 
 @instance.deferrable(delay_seconds=1)
@@ -173,6 +184,47 @@ class TestDeferrable(TestCase):
 
     def test_retriable_goes_to_error_queue(self):
         retriable_deferrable.later(True)
+        instance.run_once()
+        instance.run_once()
+
+        event_consumer.reset_mocks()
+        instance.run_once()
+        event_consumer.assert_event_emitted('pop')
+        event_consumer.assert_event_emitted('error')
+        event_consumer.assert_event_emitted('complete')
+
+        self.assertEqual(0, instance.backend.queue.stats()['available'])
+        self.assertEqual(1, instance.backend.error_queue.stats()['available'])
+
+    def test_retriable_default_with_no_error(self):
+        retriable_deferrable_with_defaults.later(False)
+        event_consumer.assert_event_emitted('push')
+        instance.run_once()
+        event_consumer.assert_event_emitted('pop')
+        event_consumer.assert_event_emitted('complete')
+        my_mock.assert_called_once_with(False)
+
+    def test_retriable_default_recover(self):
+        global RETRIABLE_ALLOW_FAIL
+
+        retriable_deferrable_with_defaults.later(True)
+        event_consumer.assert_event_emitted('push')
+        instance.run_once()
+        event_consumer.assert_event_emitted('pop')
+        event_consumer.assert_event_emitted('retry')
+        self.assertTrue(my_mock.called_once_with(True))
+
+        RETRIABLE_ALLOW_FAIL = False
+        event_consumer.reset_mocks()
+        instance.run_once()
+        event_consumer.assert_event_emitted('pop')
+        event_consumer.assert_event_not_emitted('retry')
+        event_consumer.assert_event_not_emitted('error')
+        event_consumer.assert_event_emitted('complete')
+        self.assertTrue(my_mock.has_calls((True,), (False,)))
+
+    def test_retriable_default_goes_to_error_queue(self):
+        retriable_deferrable_with_defaults.later(True)
         instance.run_once()
         instance.run_once()
 
