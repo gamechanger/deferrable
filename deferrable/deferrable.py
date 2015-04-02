@@ -74,7 +74,7 @@ class Deferrable(object):
         consumer needs to implement touch, you should probably do these
         steps separately inside your consumer."""
         envelope, item = self.backend.queue.pop()
-        self.process(envelope, item)
+        return self.process(envelope, item)
 
     def process(self, envelope, item):
         if not envelope:
