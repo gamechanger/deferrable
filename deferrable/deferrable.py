@@ -69,7 +69,14 @@ class Deferrable(object):
         return lambda method: self._deferrable(method, *args, **kwargs)
 
     def run_once(self):
+        """Provided as a convenience function for consumers that are not
+        concerned with envelope-level heartbeats (touch operations). If your
+        consumer needs to implement touch, you should probably do these
+        steps separately inside your consumer."""
         envelope, item = self.backend.queue.pop()
+        self.process(envelope, item)
+
+    def process(self, envelope, item):
         if not envelope:
             self._emit('empty', item)
             return
