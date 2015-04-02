@@ -40,10 +40,11 @@ class Deferrable(object):
     - on_debounce_error : exception encountered while processing debounce logic (item will still be queued)
     """
 
-    def __init__(self, backend, redis_client=None, default_error_classes=None):
+    def __init__(self, backend, redis_client=None, default_error_classes=None, default_max_attempts=3):
         self.backend = backend
         self.redis_client = redis_client
         self.default_error_classes = default_error_classes
+        self.default_max_attempts = default_max_attempts
 
         self._metadata_producer_consumers = []
         self._event_consumers = []
@@ -148,7 +149,7 @@ class Deferrable(object):
         self.backend.error_queue.push(item)
         self._emit('error', item)
 
-    def _validate_deferrable_args(self, max_attempts, delay_seconds, debounce_seconds, debounce_always_delay, ttl_seconds):
+    def _validate_deferrable_args(self, delay_seconds, debounce_seconds, debounce_always_delay, ttl_seconds):
         if debounce_seconds and not self.redis_client:
             raise ValueError('redis_client is required for debounce')
 
@@ -198,19 +199,20 @@ class Deferrable(object):
             item['delay'] = 0
             self._emit('debounce_error', item)
 
-    def _deferrable(self, method, error_classes=None, max_attempts=1,
+    def _deferrable(self, method, error_classes=None, max_attempts=None,
                     delay_seconds=0, debounce_seconds=0, debounce_always_delay=False, ttl_seconds=0):
-        self._validate_deferrable_args(max_attempts, delay_seconds, debounce_seconds, debounce_always_delay, ttl_seconds)
+        self._validate_deferrable_args(delay_seconds, debounce_seconds, debounce_always_delay, ttl_seconds)
 
         def later(*args, **kwargs):
             item = build_later_item(method, *args, **kwargs)
             now = time.time()
             item_error_classes = error_classes if error_classes is not None else self.default_error_classes
+            item_max_attempts = max_attempts if max_attempts is not None else self.default_max_attempts
             item.update({
                 'group': dumps(self.backend.group),
                 'error_classes': dumps(item_error_classes),
                 'attempts': 0,
-                'max_attempts': max_attempts,
+                'max_attempts': item_max_attempts,
                 'first_push_time': now,
                 'last_push_time': now,
                 'original_delay_seconds': delay_seconds,
