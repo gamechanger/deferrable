@@ -216,7 +216,7 @@ class Deferrable(object):
             item_error_classes = error_classes if error_classes is not None else self.default_error_classes
             item_max_attempts = max_attempts if max_attempts is not None else self.default_max_attempts
             item.update({
-                'group': dumps(self.backend.group),
+                'group': self.backend.group,
                 'error_classes': dumps(item_error_classes),
                 'attempts': 0,
                 'max_attempts': item_max_attempts,
