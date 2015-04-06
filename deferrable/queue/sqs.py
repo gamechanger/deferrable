@@ -106,6 +106,9 @@ class SQSQueue(Queue):
         return self.sqs_connection.delete_message(self.queue, envelope)
 
     def _complete_batch(self, envelopes):
+        # reassign envelope IDs to prevent unique ID errors
+        for envelope in envelopes:
+            envelope.id = str(uuid1())
         response = self.sqs_connection.delete_message_batch(self.queue, envelopes)
         id_map = {success['id']: True
                   for success in response.results}
