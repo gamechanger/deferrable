@@ -23,6 +23,8 @@ Python queueing framework with pluggable backends. Currently supports [Dockets](
 
 ## Quick Start
 
+After cloning the repository, run ```python setup.py develop``` to set up all of the dependencies/requirements
+
 Just want to get up and running with, for example, an SQS queue? You'll end up writing something like this:
 
 ```python
