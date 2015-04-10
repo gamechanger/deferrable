@@ -236,6 +236,9 @@ class Deferrable(object):
             else:
                 item['delay'] = delay_seconds
 
+            # Final delay value calculated
+            item['original_delay'] = item['delay']
+
             for producer_consumer in self._metadata_producer_consumers:
                 producer_consumer._apply_metadata_to_item(item)
 
