@@ -14,6 +14,7 @@ skipped (debounced) or delayed by the full `debounce_seconds` amount. The
 constraint that the item is processed at most once per `debounce_seconds` seconds
 still holds."""
 
+import math
 import time
 
 class DebounceStrategy(object):
@@ -52,4 +53,4 @@ def get_debounce_strategy(redis_client, item, debounce_seconds, debounce_always_
     if seconds_since_last_push > debounce_seconds:
         return DebounceStrategy.PUSH_NOW, 0
 
-    return DebounceStrategy.PUSH_DELAYED, debounce_seconds - seconds_since_last_push
+    return DebounceStrategy.PUSH_DELAYED, math.ceil(debounce_seconds - seconds_since_last_push)

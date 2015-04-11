@@ -47,8 +47,7 @@ class TestDebounce(TestCase):
         set_last_push_time(self.redis_client, self.item, time.time(), 1)
         strategy, delay_time = get_debounce_strategy(self.redis_client, self.item, 1, False)
         self.assertEqual(strategy, DebounceStrategy.PUSH_DELAYED)
-        self.assertGreater(delay_time, 0)
-        self.assertLess(delay_time, 1)
+        self.assertEqual(delay_time, 1)
 
     def test_debounce_strategy_push_set_always_delay(self):
         set_last_push_time(self.redis_client, self.item, time.time(), 1)
