@@ -9,6 +9,7 @@ from .pickling import loads, dumps, build_later_item, unpickle_method_call, pret
 from .debounce import get_debounce_strategy, set_last_push_time, set_debounce_key, DebounceStrategy
 from .ttl import add_ttl_metadata_to_item, item_is_expired
 from .backoff import apply_exponential_backoff_options, apply_exponential_backoff_delay
+from .redis import initialize_redis_client
 
 class Deferrable(object):
     """
@@ -43,12 +44,18 @@ class Deferrable(object):
 
     def __init__(self, backend, redis_client=None, default_error_classes=None, default_max_attempts=5):
         self.backend = backend
-        self.redis_client = redis_client
+        self._redis_client = redis_client
         self.default_error_classes = default_error_classes
         self.default_max_attempts = default_max_attempts
 
         self._metadata_producer_consumers = []
         self._event_consumers = []
+
+    @property
+    def redis_client(self):
+        if not hasattr(self, '_initialized_redis_client'):
+            self._initialized_redis_client = initialize_redis_client(self._redis_client)
+        return self._initialized_redis_client
 
     def deferrable(self, *args, **kwargs):
         """Decorator. Use this to register a function with this Deferrable
