@@ -28,24 +28,28 @@ def _debounce_key(item):
 def _last_push_key(item):
     return u"last_push.{}.{}.{}".format(item['method'], item['args'], item['kwargs'])
 
-def set_last_push_time(redis_client, item, time_to_set, delay_seconds):
+def set_debounce_keys_for_push_now(redis_client, item, debounce_seconds):
     """Set a key in Redis indicating the last time this item was potentially
     available inside a non-delay queue. Expires after 2*delay period to
     keep Redis clean. The 2* ensures that the key would have been stale at
     the period it is reaped."""
-    redis_client.set(_last_push_key(item), time_to_set, px=int(2*delay_seconds*1000))
+    redis_client.set(_last_push_key(item), time.time(), px=int(2*debounce_seconds*1000))
 
-def set_debounce_key(redis_client, item, expire_seconds):
-    redis_client.set(_debounce_key(item), '_', px=int(expire_seconds*1000))
+def set_debounce_keys_for_push_delayed(redis_client, item, seconds_to_delay, debounce_seconds):
+    redis_client.scripts.set_debounce_keys(keys=[_last_push_key(item),
+                                                 _debounce_key(item)],
+                                           args=[time.time(), seconds_to_delay, debounce_seconds])
 
 def get_debounce_strategy(redis_client, item, debounce_seconds, debounce_always_delay):
-    if redis_client.get(_debounce_key(item)):
+    last_push_time, debounce_value = redis_client.scripts.get_debounce_keys(keys=[_last_push_key(item),
+                                                                                  _debounce_key(item)])
+
+    if debounce_value:
         return DebounceStrategy.SKIP, 0
 
     if debounce_always_delay:
         return DebounceStrategy.PUSH_DELAYED, debounce_seconds
 
-    last_push_time = redis_client.get(_last_push_key(item))
     if not last_push_time:
         return DebounceStrategy.PUSH_NOW, 0
 

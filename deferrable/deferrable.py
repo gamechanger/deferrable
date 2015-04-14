@@ -6,9 +6,11 @@ import socket
 from traceback import format_exc
 
 from .pickling import loads, dumps, build_later_item, unpickle_method_call, pretty_unpickle
-from .debounce import get_debounce_strategy, set_last_push_time, set_debounce_key, DebounceStrategy
+from .debounce import (get_debounce_strategy, set_debounce_keys_for_push_now,
+                       set_debounce_keys_for_push_delayed, DebounceStrategy)
 from .ttl import add_ttl_metadata_to_item, item_is_expired
 from .backoff import apply_exponential_backoff_options, apply_exponential_backoff_delay
+from .redis import initialize_redis_client
 
 class Deferrable(object):
     """
@@ -43,12 +45,18 @@ class Deferrable(object):
 
     def __init__(self, backend, redis_client=None, default_error_classes=None, default_max_attempts=5):
         self.backend = backend
-        self.redis_client = redis_client
+        self._redis_client = redis_client
         self.default_error_classes = default_error_classes
         self.default_max_attempts = default_max_attempts
 
         self._metadata_producer_consumers = []
         self._event_consumers = []
+
+    @property
+    def redis_client(self):
+        if not hasattr(self, '_initialized_redis_client'):
+            self._initialized_redis_client = initialize_redis_client(self._redis_client)
+        return self._initialized_redis_client
 
     def deferrable(self, *args, **kwargs):
         """Decorator. Use this to register a function with this Deferrable
@@ -194,10 +202,9 @@ class Deferrable(object):
             self._emit('debounce_miss', item)
 
             if debounce_strategy == DebounceStrategy.PUSH_NOW:
-                set_last_push_time(self.redis_client, item, time.time(), debounce_seconds)
+                set_debounce_keys_for_push_now(self.redis_client, item, debounce_seconds)
             elif debounce_strategy == DebounceStrategy.PUSH_DELAYED:
-                set_last_push_time(self.redis_client, item, time.time() + seconds_to_delay, debounce_seconds)
-                set_debounce_key(self.redis_client, item, seconds_to_delay)
+                set_debounce_keys_for_push_delayed(self.redis_client, item, seconds_to_delay, debounce_seconds)
 
             item['delay'] = seconds_to_delay
         except: # Skip debouncing if we hit an error, don't fail completely
