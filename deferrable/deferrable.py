@@ -8,7 +8,7 @@ from traceback import format_exc
 from .pickling import loads, dumps, build_later_item, unpickle_method_call, pretty_unpickle
 from .debounce import get_debounce_strategy, set_last_push_time, set_debounce_key, DebounceStrategy
 from .ttl import add_ttl_metadata_to_item, item_is_expired
-from .backoff import apply_exponential_backoff
+from .backoff import apply_exponential_backoff_options, apply_exponential_backoff_delay
 
 class Deferrable(object):
     """
@@ -102,7 +102,7 @@ class Deferrable(object):
                 self._push_item_to_error_queue(item)
             else:
                 item['attempts'] += 1
-                apply_exponential_backoff(item)
+                apply_exponential_backoff_delay(item)
                 self.backend.queue.push(item)
                 self._emit('retry', item)
         except Exception:
@@ -206,7 +206,8 @@ class Deferrable(object):
             self._emit('debounce_error', item)
 
     def _deferrable(self, method, error_classes=None, max_attempts=None,
-                    delay_seconds=0, debounce_seconds=0, debounce_always_delay=False, ttl_seconds=0):
+                    delay_seconds=0, debounce_seconds=0, debounce_always_delay=False, ttl_seconds=0,
+                    use_exponential_backoff=True):
         self._validate_deferrable_args(delay_seconds, debounce_seconds, debounce_always_delay, ttl_seconds)
 
         def later(*args, **kwargs):
@@ -225,6 +226,7 @@ class Deferrable(object):
                 'original_debounce_seconds': debounce_seconds,
                 'original_debounce_always_delay': debounce_always_delay
             })
+            apply_exponential_backoff_options(item, use_exponential_backoff)
             if ttl_seconds:
                 add_ttl_metadata_to_item(item, ttl_seconds)
 

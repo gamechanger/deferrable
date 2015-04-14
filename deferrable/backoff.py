@@ -6,7 +6,13 @@ import time
 BACKOFF_CONSTANT = 2
 BACKOFF_BASE = 2
 
-def apply_exponential_backoff(item):
+def apply_exponential_backoff_options(item, use_exponential_backoff):
+    item['use_exponential_backoff'] = use_exponential_backoff
+
+def apply_exponential_backoff_delay(item):
+    if not item.get('use_exponential_backoff'):
+        return
+
     this_attempt_number = item['attempts'] # keep in mind this is 0-indexed
     delay_seconds = BACKOFF_CONSTANT + (BACKOFF_BASE ** this_attempt_number)
 
