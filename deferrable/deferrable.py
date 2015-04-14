@@ -8,6 +8,7 @@ from traceback import format_exc
 from .pickling import loads, dumps, build_later_item, unpickle_method_call, pretty_unpickle
 from .debounce import get_debounce_strategy, set_last_push_time, set_debounce_key, DebounceStrategy
 from .ttl import add_ttl_metadata_to_item, item_is_expired
+from .backoff import apply_exponential_backoff
 
 class Deferrable(object):
     """
@@ -101,9 +102,7 @@ class Deferrable(object):
                 self._push_item_to_error_queue(item)
             else:
                 item['attempts'] += 1
-                item['last_push_time'] = time.time()
-                if 'delay' in item:
-                    del item['delay']
+                apply_exponential_backoff(item)
                 self.backend.queue.push(item)
                 self._emit('retry', item)
         except Exception:
