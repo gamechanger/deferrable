@@ -41,7 +41,7 @@ class Deferrable(object):
     - on_debounce_error : exception encountered while processing debounce logic (item will still be queued)
     """
 
-    def __init__(self, backend, redis_client=None, default_error_classes=None, default_max_attempts=3):
+    def __init__(self, backend, redis_client=None, default_error_classes=None, default_max_attempts=5):
         self.backend = backend
         self.redis_client = redis_client
         self.default_error_classes = default_error_classes
