@@ -13,6 +13,7 @@ Python queueing framework with pluggable backends. Currently supports [Dockets](
   - [Deferrable Instances](#deferrable-instances)
 - [Execution Model](#execution-model)
   - [Retry](#retry)
+    - [Exponential Backoff](#exponential-backoff)
   - [TTL](#ttl)
   - [Delay](#delay)
   - [Debouncing](#debouncing)
@@ -140,6 +141,16 @@ Retry parameters may be specified within the `@deferrable` decorator and include
 @deferrable_instance.deferrable(error_classes=[ZeroDivisionError], max_attempts=3)
 def divide():
     return 1 / 0
+```
+
+#### Exponential Backoff
+
+By default, items to be retried will be delayed to effect an exponential backoff. Each subsequent attempt will double the time by which the retried item is delayed. This can be disabled via the `use_exponential_backoff` parameter to the `@deferrable` decorator.
+
+```python
+@deferrable_instance.deferrable(use_exponential_backoff=False)
+def job_without_backoff():
+    ...
 ```
 
 ### TTL
