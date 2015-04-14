@@ -1,6 +1,8 @@
 """This module handles exponential backoff when retrying items
 after a retriable exception is encountered."""
 
+import time
+
 BACKOFF_CONSTANT = 2
 BACKOFF_BASE = 2
 
