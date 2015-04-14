@@ -11,6 +11,9 @@ def apply_exponential_backoff_options(item, use_exponential_backoff):
 
 def apply_exponential_backoff_delay(item):
     if not item.get('use_exponential_backoff'):
+        item['last_push_time'] = time.time()
+        if 'delay' in item:
+            del item['delay']
         return
 
     this_attempt_number = item['attempts'] # keep in mind this is 0-indexed
