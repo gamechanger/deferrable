@@ -60,7 +60,7 @@ RETRIABLE_ALLOW_FAIL = True
 def simple_deferrable(*args, **kwargs):
     my_mock(*args, **kwargs)
 
-@instance.deferrable(error_classes=[ValueError], max_attempts=3)
+@instance.deferrable(error_classes=[ValueError], max_attempts=3, use_exponential_backoff=False)
 def retriable_deferrable(should_raise):
     global RETRIABLE_ALLOW_FAIL
     if should_raise and RETRIABLE_ALLOW_FAIL:
@@ -68,7 +68,7 @@ def retriable_deferrable(should_raise):
         raise ValueError()
     my_mock(should_raise)
 
-@instance.deferrable(max_attempts=3)
+@instance.deferrable(max_attempts=3, use_exponential_backoff=False)
 def retriable_deferrable_with_defaults(should_raise):
     global RETRIABLE_ALLOW_FAIL
     if should_raise and RETRIABLE_ALLOW_FAIL:
