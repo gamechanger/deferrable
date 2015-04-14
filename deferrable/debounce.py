@@ -41,10 +41,10 @@ def set_debounce_keys_for_push_delayed(redis_client, item, seconds_to_delay, deb
                                            args=[time.time(), seconds_to_delay, debounce_seconds])
 
 def get_debounce_strategy(redis_client, item, debounce_seconds, debounce_always_delay):
-    last_push_time, debounce_time = redis_client.scripts.get_debounce_keys(keys=[_last_push_key(item),
-                                                                                 _debounce_key(item)])
+    last_push_time, debounce_value = redis_client.scripts.get_debounce_keys(keys=[_last_push_key(item),
+                                                                                  _debounce_key(item)])
 
-    if debounce_time:
+    if debounce_value:
         return DebounceStrategy.SKIP, 0
 
     if debounce_always_delay:
