@@ -11,6 +11,7 @@ from .debounce import (get_debounce_strategy, set_debounce_keys_for_push_now,
 from .ttl import add_ttl_metadata_to_item, item_is_expired
 from .backoff import apply_exponential_backoff_options, apply_exponential_backoff_delay
 from .redis import initialize_redis_client
+from .delay import MAXIMUM_DELAY_SECONDS
 
 class Deferrable(object):
     """
@@ -170,10 +171,8 @@ class Deferrable(object):
         if delay_seconds and debounce_seconds:
             raise ValueError('You cannot delay and debounce at the same time (debounce uses delay internally).')
 
-        # This maximum delay is set for performance reasons
-        # Do not remove unless you realllllly know what you're doing!
-        if delay_seconds > 900 or debounce_seconds > 900:
-            raise ValueError('Delay or debounce window cannot exceed 15 minutes (900 seconds)')
+        if delay_seconds > MAXIMUM_DELAY_SECONDS or debounce_seconds > MAXIMUM_DELAY_SECONDS:
+            raise ValueError('Delay or debounce window cannot exceed {} seconds'.format(MAXIMUM_DELAY_SECONDS))
 
         if debounce_always_delay and not debounce_seconds:
             raise ValueError('debounce_always_delay is an option to debounce_seconds, which was not set. Probably a mistake.')
