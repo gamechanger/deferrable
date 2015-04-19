@@ -19,7 +19,7 @@ def apply_exponential_backoff_delay(item):
         return
 
     this_attempt_number = item['attempts'] # keep in mind this is 0-indexed
-    delay_seconds = max(BACKOFF_CONSTANT + (BACKOFF_BASE ** this_attempt_number), MAXIMUM_DELAY_SECONDS)
+    delay_seconds = min(BACKOFF_CONSTANT + (BACKOFF_BASE ** this_attempt_number), MAXIMUM_DELAY_SECONDS)
 
     # We adjust the last push time by the delay here so that our response
     # time metrics are not skewed by the backoff delay
