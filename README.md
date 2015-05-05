@@ -133,7 +133,7 @@ When `.later(...)` is called on a `@deferred` function, the function and its arg
 Retry parameters may be specified within the `@deferrable` decorator and include:
 
 - `error_classes`: Iterable of error classes which should trigger a retry. If an error not included in this iterable is encountered, the job will be pushed to the error queue after any failure.
-- `max_attempts`: Total number of times to retry an item before sending it to the error queue. Defaults to 1, e.g. no retry.
+- `max_attempts`: Total number of times to retry an item before sending it to the error queue. Defaults to 5.
 
 ```python
 # This will be requeued twice after it fails, for a total of three attempts before
