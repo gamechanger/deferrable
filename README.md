@@ -265,3 +265,4 @@ deferrable_instance.register_event_consumer(MyEventConsumer())
 
 Tests depend on a Redis 2.8+ instance running at `localhost:6379`. If you've got that, then `python setup.py test` should work. However, `setuptools` is garbage, so you may need to `pip install` the requirements manually. YMMV.
 dog
+dog
