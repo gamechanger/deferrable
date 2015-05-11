@@ -12,7 +12,6 @@ script:
     python -c "import dynamic_requirements; f = open('requirements.txt', 'w'); map(lambda x: f.write(x + '\n'), dynamic_requirements.test_requires)"
   - pip install -q -r requirements.txt
   - nosetests
-  - tests_complete deferrable
 notify:
   webhook:
     urls:
