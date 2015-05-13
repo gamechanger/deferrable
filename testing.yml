@@ -1,6 +1,6 @@
 image: docker.gamechanger.io/test/deferrable
 services:
-  - redis
+  - redis:2.8
 script:
   - cd $REPO
   - pip install -q .
