@@ -1,6 +1,4 @@
 image: docker.gamechanger.io/test/deferrable
-git:
-  depth: 10
 services:
   - redis
 script:
@@ -10,9 +8,3 @@ script:
     python -c "import dynamic_requirements; f = open('requirements.txt', 'w'); map(lambda x: f.write(x + '\n'), dynamic_requirements.test_requires)"
   - pip install -q -r requirements.txt
   - nosetests
-notify:
-  webhook:
-    urls:
-      - http://localhost:7777/webhook
-    on_success: true
-    on_failure: true
