@@ -3,6 +3,8 @@ Deferrable
 
 Python queueing framework with pluggable backends. Currently supports [Dockets](https://github.com/gamechanger/dockets), [SQS](http://aws.amazon.com/sqs/), and [Python's stdlib Queue](https://docs.python.org/2/library/queue.html).
 
+[![Github License](https://img.shields.io/github/license/gamechanger/deferrable.svg)](https://github.com/gamechanger/deferrable/blob/master/LICENSE)
+
 ## Table of Contents
 
 - [Quick Start](#quick-start)
