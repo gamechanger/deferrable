@@ -159,7 +159,7 @@ def job_without_backoff():
 
 Deferrable jobs may be given a TTL through the `ttl_seconds` argument to the `@deferrable` decorator. The job will be considered "expired" and will not execute once the TTL has elapsed since the initial push of the job. This is often useful for time-sensitive tasks such as sending a real-time notification. Using a TTL, you can guarantee you will not send the message hours later (once the user no longer cares) if you run into a processing backlog.
 
-- `ttl_seconds`: Length of the TTL, in seconds
+- `ttl_seconds`: Length of the TTL, in seconds or as a callable which will be invoked exactly once per `.later()` invocation.
 
 ```python
 @deferrable_instance.deferrable(ttl_seconds=300)
@@ -178,6 +178,8 @@ Deferrable jobs may be unconditionally delayed through the `delay_seconds` argum
 
 **N.B.**: Some queue implementations may not support delayed jobs. Check your implementation. :smiley:
 
+- `delay_seconds`: Time to delay, in seconds or as a callable which will be invoked exactly once per `.later()` invocatio.n
+
 ```python
 @deferrable_instance.deferrable(delay_seconds=30)
 def do_this_after_30_seconds():
@@ -193,6 +195,8 @@ Only use debouncing with **idempotent** operations! Debouncing will cause some j
 Debouncing uses delay under the hood. You cannot specify both `delay_seconds` and `debounce_seconds` for a single job.
 
 You must provide a `redis_client` to your `Deferrable` instance in order to use debouncing.
+
+- `debounce_seconds`: Length of the debounce window, in seconds or as a callable which will be invoked exactly once per `.later()` invocation.
 
 ```python
 deferrable_instance = Deferrable(backend=my_backend, redis_client=my_redis_client)

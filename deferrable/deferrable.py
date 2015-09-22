@@ -164,18 +164,24 @@ class Deferrable(object):
         self.backend.error_queue.push(item)
         self._emit('error', item)
 
-    def _validate_deferrable_args(self, delay_seconds, debounce_seconds, debounce_always_delay, ttl_seconds):
+    def _validate_deferrable_args_compile_time(self, delay_seconds, debounce_seconds, debounce_always_delay, ttl_seconds):
+        """Validation check which can be run at compile-time on decorated functions. This
+        cannot do any bounds checking on the time arguments, which can be reified from
+        callables at each individual .later() invocation."""
         if debounce_seconds and not self.redis_client:
             raise ValueError('redis_client is required for debounce')
 
         if delay_seconds and debounce_seconds:
             raise ValueError('You cannot delay and debounce at the same time (debounce uses delay internally).')
 
-        if delay_seconds > MAXIMUM_DELAY_SECONDS or debounce_seconds > MAXIMUM_DELAY_SECONDS:
-            raise ValueError('Delay or debounce window cannot exceed {} seconds'.format(MAXIMUM_DELAY_SECONDS))
-
         if debounce_always_delay and not debounce_seconds:
             raise ValueError('debounce_always_delay is an option to debounce_seconds, which was not set. Probably a mistake.')
+
+    def _validate_deferrable_args_run_time(self, delay_seconds, debounce_seconds, ttl_seconds):
+        """Validation check run once all variables have been reified. This is where you
+        can do bounds checking on time variables."""
+        if delay_seconds > MAXIMUM_DELAY_SECONDS or debounce_seconds > MAXIMUM_DELAY_SECONDS:
+            raise ValueError('Delay or debounce window cannot exceed {} seconds'.format(MAXIMUM_DELAY_SECONDS))
 
         if ttl_seconds:
             if delay_seconds > ttl_seconds or debounce_seconds > ttl_seconds:
@@ -214,9 +220,16 @@ class Deferrable(object):
     def _deferrable(self, method, error_classes=None, max_attempts=None,
                     delay_seconds=0, debounce_seconds=0, debounce_always_delay=False, ttl_seconds=0,
                     use_exponential_backoff=True):
-        self._validate_deferrable_args(delay_seconds, debounce_seconds, debounce_always_delay, ttl_seconds)
+        self._validate_deferrable_args_compile_time(delay_seconds, debounce_seconds, debounce_always_delay, ttl_seconds)
 
         def later(*args, **kwargs):
+
+            delay_actual = delay_seconds() if callable(delay_seconds) else delay_seconds
+            debounce_actual = debounce_seconds() if callable(debounce_seconds) else debounce_seconds
+            ttl_actual = ttl_seconds() if callable(ttl_seconds) else ttl_seconds
+
+            self._validate_deferrable_args_run_time(delay_actual, debounce_actual, ttl_actual)
+
             item = build_later_item(method, *args, **kwargs)
             now = time.time()
             item_error_classes = error_classes if error_classes is not None else self.default_error_classes
@@ -228,20 +241,20 @@ class Deferrable(object):
                 'max_attempts': item_max_attempts,
                 'first_push_time': now,
                 'last_push_time': now,
-                'original_delay_seconds': delay_seconds,
-                'original_debounce_seconds': debounce_seconds,
+                'original_delay_seconds': delay_actual,
+                'original_debounce_seconds': debounce_actual,
                 'original_debounce_always_delay': debounce_always_delay
             })
             apply_exponential_backoff_options(item, use_exponential_backoff)
-            if ttl_seconds:
-                add_ttl_metadata_to_item(item, ttl_seconds)
+            if ttl_actual:
+                add_ttl_metadata_to_item(item, ttl_actual)
 
-            if debounce_seconds:
-                self._apply_delay_and_skip_for_debounce(item, debounce_seconds, debounce_always_delay)
+            if debounce_actual:
+                self._apply_delay_and_skip_for_debounce(item, debounce_actual, debounce_always_delay)
                 if item.get('debounce_skip'):
                     return
             else:
-                item['delay'] = delay_seconds
+                item['delay'] = delay_actual
 
             # Final delay value calculated
             item['original_delay'] = item['delay']

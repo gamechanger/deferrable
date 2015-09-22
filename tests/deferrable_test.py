@@ -92,6 +92,18 @@ def debounced_deferrable_always_delay(foo, bar, *args, **kwargs):
 def ttl_deferrable(*args, **kwargs):
     my_mock(*args, **kwargs)
 
+@instance.deferrable(delay_seconds=lambda: 1)
+def delayed_deferrable_lambda(foo, bar, *args, **kwargs):
+    my_mock(foo, bar, *args, **kwargs)
+
+@instance.deferrable(debounce_seconds=lambda: 1)
+def debounced_deferrable_lambda(foo, bar, *args, **kwargs):
+    my_mock(foo, bar, *args, **kwargs)
+
+@instance.deferrable(ttl_seconds=lambda: 1)
+def ttl_deferrable_lambda(*args, **kwargs):
+    my_mock(*args, **kwargs)
+
 class TestDeferrable(TestCase):
     def setUp(self):
         global RETRIABLE_ALLOW_FAIL
@@ -238,52 +250,58 @@ class TestDeferrable(TestCase):
         self.assertEqual(1, instance.backend.error_queue.stats()['available'])
 
     def test_delay(self):
-        delayed_deferrable.later('beans', 'cornbread')
-        event_consumer.assert_event_emitted('push')
-        instance.run_once()
-        event_consumer.assert_event_not_emitted('pop')
-        event_consumer.assert_event_not_emitted('complete')
-        self.assertFalse(my_mock.called)
+        for under_test in [delayed_deferrable, delayed_deferrable_lambda]:
+            under_test.later('beans', 'cornbread')
+            event_consumer.assert_event_emitted('push')
+            instance.run_once()
+            event_consumer.assert_event_not_emitted('pop')
+            event_consumer.assert_event_not_emitted('complete')
+            self.assertFalse(my_mock.called)
 
-        time.sleep(1.01)
-        instance.run_once()
-        event_consumer.assert_event_emitted('pop')
-        event_consumer.assert_event_emitted('complete')
-        self.assertTrue(my_mock.called)
+            time.sleep(1.01)
+            instance.run_once()
+            event_consumer.assert_event_emitted('pop')
+            event_consumer.assert_event_emitted('complete')
+            self.assertTrue(my_mock.called)
+
+            self.tearDown()
 
     def test_delay_with_debounce(self):
-        # This one should get queued immediately with the fast debounce
-        debounced_deferrable.later('beans', 'cornbread')
-        event_consumer.assert_event_emitted('push')
-        event_consumer.assert_event_emitted('debounce_miss')
-        instance.run_once()
-        event_consumer.assert_event_emitted('pop')
-        event_consumer.assert_event_emitted('complete')
-        self.assertEqual(1, len(my_mock.mock_calls))
+        for under_test in [debounced_deferrable, debounced_deferrable_lambda]:
+            # This one should get queued immediately with the fast debounce
+            under_test.later('beans', 'cornbread')
+            event_consumer.assert_event_emitted('push')
+            event_consumer.assert_event_emitted('debounce_miss')
+            instance.run_once()
+            event_consumer.assert_event_emitted('pop')
+            event_consumer.assert_event_emitted('complete')
+            self.assertEqual(1, len(my_mock.mock_calls))
 
-        # This one gets delayed
-        event_consumer.reset_mocks()
-        debounced_deferrable.later('beans', 'cornbread')
-        event_consumer.assert_event_emitted('push')
-        event_consumer.assert_event_emitted('debounce_miss')
+            # This one gets delayed
+            event_consumer.reset_mocks()
+            under_test.later('beans', 'cornbread')
+            event_consumer.assert_event_emitted('push')
+            event_consumer.assert_event_emitted('debounce_miss')
 
-        # And this one gets debounced and skipped
-        event_consumer.reset_mocks()
-        debounced_deferrable.later('beans', 'cornbread')
-        event_consumer.assert_event_emitted('push')
-        event_consumer.assert_event_emitted('debounce_hit')
-        instance.run_once()
-        event_consumer.assert_event_emitted('pop')
-        event_consumer.assert_event_emitted('complete')
-        self.assertEqual(1, len(my_mock.mock_calls))
+            # And this one gets debounced and skipped
+            event_consumer.reset_mocks()
+            under_test.later('beans', 'cornbread')
+            event_consumer.assert_event_emitted('push')
+            event_consumer.assert_event_emitted('debounce_hit')
+            instance.run_once()
+            event_consumer.assert_event_emitted('pop')
+            event_consumer.assert_event_emitted('complete')
+            self.assertEqual(1, len(my_mock.mock_calls))
 
-        event_consumer.reset_mocks()
-        time.sleep(1.01)
-        instance.run_once()
-        instance.run_once()
-        event_consumer.assert_event_emitted('pop')
-        event_consumer.assert_event_emitted('complete')
-        self.assertEqual(2, len(my_mock.mock_calls))
+            event_consumer.reset_mocks()
+            time.sleep(1.01)
+            instance.run_once()
+            instance.run_once()
+            event_consumer.assert_event_emitted('pop')
+            event_consumer.assert_event_emitted('complete')
+            self.assertEqual(2, len(my_mock.mock_calls))
+
+            self.tearDown()
 
     def test_delay_with_debounce_always_delay(self):
         debounced_deferrable_always_delay.later('beans', 'cornbread')
@@ -315,42 +333,49 @@ class TestDeferrable(TestCase):
         self.assertEqual(2, len(my_mock.mock_calls))
 
     def test_debounce_does_not_affect_different_args(self):
-        debounced_deferrable.later('beans', 'cornbread')
-        event_consumer.assert_event_emitted('push')
+        for under_test in [debounced_deferrable, debounced_deferrable_lambda]:
+            under_test.later('beans', 'cornbread')
+            event_consumer.assert_event_emitted('push')
 
-        event_consumer.reset_mocks()
-        debounced_deferrable.later('hummus', 'flatbread')
-        event_consumer.assert_event_emitted('push')
+            event_consumer.reset_mocks()
+            under_test.later('hummus', 'flatbread')
+            event_consumer.assert_event_emitted('push')
 
-        time.sleep(1)
-        instance.run_once()
-        event_consumer.assert_event_emitted('pop')
-        event_consumer.assert_event_emitted('complete')
+            time.sleep(1)
+            instance.run_once()
+            event_consumer.assert_event_emitted('pop')
+            event_consumer.assert_event_emitted('complete')
 
-        event_consumer.reset_mocks()
-        instance.run_once()
-        event_consumer.assert_event_emitted('pop')
-        event_consumer.assert_event_emitted('complete')
-        self.assertEqual(2, len(my_mock.mock_calls))
+            event_consumer.reset_mocks()
+            instance.run_once()
+            event_consumer.assert_event_emitted('pop')
+            event_consumer.assert_event_emitted('complete')
+            self.assertEqual(2, len(my_mock.mock_calls))
+
+            self.tearDown()
 
     def test_runs_with_ttl(self):
-        ttl_deferrable.later('beans', 'cornbread')
-        event_consumer.assert_event_emitted('push')
-        time.sleep(0.5)
-        instance.run_once()
-        event_consumer.assert_event_emitted('pop')
-        event_consumer.assert_event_emitted('complete')
-        self.assertTrue(my_mock.called)
+        for under_test in [ttl_deferrable, ttl_deferrable_lambda]:
+            under_test.later('beans', 'cornbread')
+            event_consumer.assert_event_emitted('push')
+            time.sleep(0.5)
+            instance.run_once()
+            event_consumer.assert_event_emitted('pop')
+            event_consumer.assert_event_emitted('complete')
+            self.assertTrue(my_mock.called)
+            self.tearDown()
 
     def test_ttl_expiry(self):
-        ttl_deferrable.later('beans', 'cornbread')
-        event_consumer.assert_event_emitted('push')
-        time.sleep(1.5)
-        instance.run_once()
-        event_consumer.assert_event_emitted('pop')
-        event_consumer.assert_event_emitted('expire')
-        event_consumer.assert_event_emitted('complete')
-        self.assertFalse(my_mock.called)
+        for under_test in [ttl_deferrable, ttl_deferrable_lambda]:
+            under_test.later('beans', 'cornbread')
+            event_consumer.assert_event_emitted('push')
+            time.sleep(1.5)
+            instance.run_once()
+            event_consumer.assert_event_emitted('pop')
+            event_consumer.assert_event_emitted('expire')
+            event_consumer.assert_event_emitted('complete')
+            self.assertFalse(my_mock.called)
+            self.tearDown()
 
     def test_simple_function_with_metadata(self):
         metadata_id = uuid1()
