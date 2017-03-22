@@ -1,6 +1,6 @@
 install_requires = [
     'Dockets>=0.4.1,<0.5.0',
-    'boto>=2.26.0',
+    'gc-boto>=2.37.1',
     'attrdict>=2.0.0'
 ]
 

@@ -21,7 +21,7 @@ except (IOError, ImportError):
 
 setup(
     name='deferrable',
-    version='0.0.1',
+    version='0.0.2',
     description='Queueing framework with pluggable backends',
     url='https://github.com/gamechanger/deferrable',
     private_repository='gamechanger',
