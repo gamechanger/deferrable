@@ -30,9 +30,7 @@ services:
         mkdir -p $$XUNIT_DIR
         chmod 777 $$XUNIT_DIR
         cd $$REPO
-        pip install -q .
-        python -c "import dynamic_requirements; f = open(\"requirements.txt\", \"w\"); map(lambda x: f.write(x + \"\n\"), dynamic_requirements.test_requires)"
-        pip install -q -r requirements.txt
+        pip install -q -r requirements-tests.txt
         nosetests
       '
     networks:
