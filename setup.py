@@ -1,36 +1,50 @@
 import os
-import sys
-import imp
-from setuptools import find_packages
+import subprocess
+from setuptools import find_packages, setup
+
+
+def read(fname):
+    with open(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), fname), "rb"
+    ) as fid:
+        return fid.read().decode("utf-8")
+
+
+def output(cmd):
+    return subprocess.check_output(cmd, shell=True).decode("utf-8").strip()
+
 
 try:
-    from restricted_pkg import setup
-except:
-    # allow falling back to setuptools only if
-    # we are not trying to upload
-    if 'upload' in sys.argv:
-        raise ImportError('restricted_pkg is required to upload, first do pip install restricted_pkg')
-    from setuptools import setup
+    version = read("version").strip()
+except IOError:
+    try:
+        version = (
+            output("git describe --tags --exact-match")
+            .replace(".tag", "")
+            .replace("pypi.", "")
+        )
+    except subprocess.CalledProcessError:
+        # git_version will be 1.0.10-<n>-g<sha>
+        # where n is number of commits after last tag
+        # and <sha> is the commit sha
+        # if the current commit is not the last tag
+        # otherwise it will simply be the last tag version
+        tag_version, n_commits, commit_sha = output("git describe --tags").split("-")
+        tag_version = tag_version.replace("pypi.", "")
+        version = "{tag_version}.post{n_commits}".format(**locals())
 
-try:
-    requirements = imp.load_source('requirements', os.path.realpath('static_requirements.py'))
-    print 'Using static requirements'
-except (IOError, ImportError):
-    requirements = imp.load_source('requirements', os.path.realpath('dynamic_requirements.py'))
-    print 'Using dynamic requirements'
 
 setup(
-    name='deferrable',
-    version='0.0.2',
-    description='Queueing framework with pluggable backends',
-    url='https://github.com/gamechanger/deferrable',
-    private_repository='gamechanger',
-    author='GameChanger',
-    author_email='travis@gamechanger.io',
+    name="deferrable",
+    version=version,
+    description="Queueing framework with pluggable backends",
+    url="https://github.com/gamechanger/deferrable",
+    author="GameChanger",
+    author_email="travis@gamechanger.io",
     packages=find_packages(),
     package_data={"deferrable": ["lua/*.lua"]},
-    install_requires=requirements.install_requires,
-    tests_require=requirements.test_requires,
+    install_requires=read("requirements.txt").splitlines(),
+    tests_require=read("requirements-tests.txt").splitlines()[1:],
     test_suite="nose.collector",
-    zip_safe=False
+    zip_safe=False,
 )
