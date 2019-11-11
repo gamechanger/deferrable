@@ -1,0 +1,32 @@
+stages:
+  - tests
+  - release
+  - publish
+
+tests:
+  stage: tests
+  image: docker.gamechanger.io/docker-compose-cleanup:latest
+  script:
+    - docker-compose build --pull tests
+    - docker-compose run --rm tests
+  only:
+    refs:
+      - branches
+
+create tag:
+  stage: release
+  image: docker.gamechanger.io/bumpversion-git-tag
+  script:
+    - bumpversion --version=patch
+  only:
+    refs:
+      - master
+
+publish pypi:
+  stage: publish
+  image: docker.gamechanger.io/twine
+  script:
+    - release
+  only:
+    refs:
+      - master
