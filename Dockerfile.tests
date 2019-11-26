@@ -1,2 +1,4 @@
 FROM docker.gamechanger.io/test/deferrable
 COPY . /mnt/test
+WORKDIR /mnt/test
+RUN make install

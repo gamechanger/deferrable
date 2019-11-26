@@ -2,6 +2,7 @@
 queue implementations."""
 
 import logging
+import os
 import time
 
 from unittest import TestCase
@@ -32,7 +33,7 @@ class TestAllQueueImplementations(TestCase):
                 queue.flush()
 
     def all_queues(self, verbose=True):
-        redis_client = StrictRedis(db=15)
+        redis_client = StrictRedis(host=os.getenv("DEFERRABLE_TEST_REDIS_HOST","redis"), db=15)
         factory = DocketsBackendFactory(redis_client, wait_time=0)
         backend = factory.create_backend_for_group('testing')
         if verbose:

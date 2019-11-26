@@ -1,4 +1,5 @@
 from unittest import TestCase
+import os
 import time
 
 from redis import StrictRedis
@@ -10,7 +11,7 @@ from deferrable.redis import initialize_redis_client
 
 class TestDebounce(TestCase):
     def setUp(self):
-        self.redis_client = initialize_redis_client(StrictRedis())
+        self.redis_client = initialize_redis_client(StrictRedis(host=os.getenv("DEFERRABLE_TEST_REDIS_HOST","redis")))
         self.item = {
             'method': 'pickled_method',
             'args': 'pickled_args',

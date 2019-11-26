@@ -1,12 +1,13 @@
 from unittest import TestCase
 from redis import StrictRedis
+import os
 
 from deferrable.backend.dockets import DocketsBackendFactory
 from deferrable.queue.dockets import DocketsQueue, DocketsErrorQueue
 
 class TestDocketsQueue(TestCase):
     def setUp(self):
-        self.redis_client = StrictRedis()
+        self.redis_client = StrictRedis(host=os.getenv("DEFERRABLE_TEST_REDIS_HOST","redis"))
         self.factory = DocketsBackendFactory(self.redis_client)
         self.backend = self.factory.create_backend_for_group('test')
         self.queue = self.backend.queue

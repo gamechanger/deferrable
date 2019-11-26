@@ -1,5 +1,6 @@
 from uuid import uuid1
 import time
+import os 
 
 from unittest import TestCase
 from mock import Mock
@@ -18,7 +19,7 @@ class CustomError(Exception):
 # passes the standard queue tests. Ideally, we'd want to automatically
 # run these with each backend (TODO). Factories specified and
 # commented out to allow quick manual testing of each.
-redis_client = StrictRedis()
+redis_client = StrictRedis(host=os.getenv("DEFERRABLE_TEST_REDIS_HOST","redis"))
 factory = DocketsBackendFactory(redis_client, wait_time=0)
 # factory = InMemoryBackendFactory()
 backend = factory.create_backend_for_group('testing')
