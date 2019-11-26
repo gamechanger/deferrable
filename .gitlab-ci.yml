@@ -5,6 +5,8 @@ stages:
 
 tests:
   stage: tests
+  variables:
+    MOUNT_PATH: /tmp/null
   image: docker.gamechanger.io/docker-compose-cleanup:latest
   script:
     - docker-compose build --pull tests
